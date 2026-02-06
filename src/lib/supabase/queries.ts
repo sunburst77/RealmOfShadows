@@ -244,6 +244,33 @@ export async function getUserByReferralCode(referralCode: string) {
 }
 
 /**
+ * 이메일로 users 테이블의 사용자 조회
+ */
+export async function getUserByEmail(email: string) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // 사용자를 찾을 수 없음
+        return null;
+      }
+      console.error('Failed to fetch user by email:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching user by email:', error);
+    return null;
+  }
+}
+
+/**
  * 이메일 & 닉네임 중복 체크 (단일 쿼리로 최적화)
  */
 export async function checkUserExists(

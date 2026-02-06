@@ -15,7 +15,7 @@ import {
   Network
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks';
-import { getUserRewardInfo, getReferralNetwork } from '@/lib/supabase';
+import { getUserRewardInfo, getReferralNetwork, getUserByEmail } from '@/lib/supabase';
 import { toast } from 'sonner';
 import type { Translations } from '../translations';
 import type { UserRewardInfo, ReferralNetworkResponse } from '@/lib/supabase/types';
@@ -29,6 +29,7 @@ interface EmpirePageProps {
 
 export function EmpirePage({ translations, referralTranslations, language }: EmpirePageProps) {
   const { user } = useAuth();
+  const [dbUser, setDbUser] = useState<{ id: string; nickname: string; email: string; referral_code: string; created_at: string } | null>(null);
   const [rewardInfo, setRewardInfo] = useState<UserRewardInfo | null>(null);
   const [networkData, setNetworkData] = useState<ReferralNetworkResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,17 +37,36 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
 
   useEffect(() => {
     async function loadUserData() {
-      if (!user?.id) return;
+      if (!user?.email) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
 
-        // 사용자 보상 정보 로드
-        const rewardData = await getUserRewardInfo(user.id);
+        // Supabase Auth 사용자의 이메일로 users 테이블에서 사용자 찾기
+        console.log('🔍 users 테이블에서 사용자 찾기:', user.email);
+        const dbUser = await getUserByEmail(user.email);
+        
+        if (!dbUser) {
+          console.error('❌ users 테이블에 사용자가 없습니다:', user.email);
+          toast.error('사전등록 정보를 찾을 수 없습니다. 사전등록을 먼저 완료해주세요.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('✅ users 테이블 사용자 찾음:', dbUser.id);
+        
+        // 사용자 정보 저장
+        setDbUser(dbUser);
+
+        // 사용자 보상 정보 로드 (users 테이블의 ID 사용)
+        const rewardData = await getUserRewardInfo(dbUser.id);
         setRewardInfo(rewardData);
 
-        // 추천 네트워크 로드
-        const network = await getReferralNetwork(user.id);
+        // 추천 네트워크 로드 (users 테이블의 ID 사용)
+        const network = await getReferralNetwork(dbUser.id);
         setNetworkData(network);
       } catch (error) {
         console.error('데이터 로드 실패:', error);
@@ -60,10 +80,10 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
   }, [user]);
 
   const handleCopyReferralCode = async () => {
-    if (!rewardInfo?.user.referral_code) return;
+    if (!dbUser?.referral_code) return;
 
     try {
-      await navigator.clipboard.writeText(rewardInfo.user.referral_code);
+      await navigator.clipboard.writeText(dbUser.referral_code);
       setCopiedCode(true);
       toast.success(translations.profile.codeCopied);
       setTimeout(() => setCopiedCode(false), 2000);
@@ -122,7 +142,7 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
             {translations.title}
           </h1>
           <p className="text-xl opacity-80">
-            {translations.welcomeMessage}, {rewardInfo?.user.nickname || user?.email}!
+            {translations.welcomeMessage}, {dbUser?.nickname || user?.email || '게이머'}!
           </p>
           <p className="text-lg opacity-60 mt-2">
             {translations.subtitle}
@@ -164,7 +184,7 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
           <StatCard
             icon={<Award className="w-8 h-8" />}
             label={translations.dashboard.stats.currentTier}
-            value={rewardInfo?.currentTier.name || '-'}
+            value={rewardInfo?.currentTier?.name || '-'}
             color="var(--color-primary-gold)"
           />
         </motion.div>
@@ -192,11 +212,11 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
             <div className="space-y-4">
               <ProfileItem
                 label={translations.profile.nickname}
-                value={rewardInfo?.user.nickname || '-'}
+                value={dbUser?.nickname || '-'}
               />
               <ProfileItem
                 label={translations.profile.email}
-                value={rewardInfo?.user.email || user?.email || '-'}
+                value={dbUser?.email || user?.email || '-'}
               />
               <ProfileItem
                 label={translations.profile.referralCode}
@@ -205,7 +225,7 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
                     <span className="font-mono text-lg"
                       style={{ color: 'var(--color-primary-gold)' }}
                     >
-                      {rewardInfo?.user.referral_code || '-'}
+                      {dbUser?.referral_code || '-'}
                     </span>
                     <button
                       onClick={handleCopyReferralCode}
@@ -223,8 +243,8 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
               />
               <ProfileItem
                 label={translations.profile.joinedDate}
-                value={rewardInfo?.user.created_at 
-                  ? new Date(rewardInfo.user.created_at).toLocaleDateString(language)
+                value={dbUser?.created_at 
+                  ? new Date(dbUser.created_at).toLocaleDateString(language)
                   : '-'
                 }
               />
@@ -253,9 +273,9 @@ export function EmpirePage({ translations, referralTranslations, language }: Emp
               {translations.rewards.subtitle}
             </p>
 
-            {rewardInfo && rewardInfo.rewards.length > 0 ? (
+            {rewardInfo && rewardInfo.unlockedRewards && rewardInfo.unlockedRewards.length > 0 ? (
               <div className="space-y-4">
-                {rewardInfo.rewards.map((reward, index) => (
+                {rewardInfo.unlockedRewards.map((reward, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-4 rounded-lg border"

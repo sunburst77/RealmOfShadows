@@ -171,14 +171,31 @@ export function LoginPage({ translations }: LoginPageProps) {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="flex items-center gap-2 p-4 rounded-lg"
+              className="p-4 rounded-lg space-y-2"
               style={{
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
               }}
             >
-              <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+              <div className="flex items-start gap-2">
+                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm text-red-400 font-medium">{error}</p>
+                  {error.includes('이메일 인증이 비활성화') && (
+                    <div className="mt-3 p-3 rounded bg-red-500/10 border border-red-500/20">
+                      <p className="text-xs text-red-300 mb-2 font-semibold">해결 방법:</p>
+                      <ol className="text-xs text-red-300/90 space-y-1 list-decimal list-inside">
+                        <li>Supabase Dashboard 접속: <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-200">https://supabase.com/dashboard</a></li>
+                        <li>프로젝트 선택 → Authentication → Settings</li>
+                        <li>"Enable Email Provider" 체크</li>
+                        <li>"Enable Magic Link" 체크</li>
+                        <li>Redirect URL에 <code className="bg-red-500/20 px-1 rounded">http://localhost:5173/empire</code> 추가</li>
+                        <li>Save 버튼 클릭</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
 

@@ -26,6 +26,7 @@ export {
   getReferralNetwork,
   getUserRewardInfo,
   getUserByReferralCode,
+  getUserByEmail,
   checkUserExists,
   checkEmailExists,
   checkNicknameExists,

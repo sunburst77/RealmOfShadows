@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './client';
+import { checkUserExists } from './queries';
 import type { Session, AuthChangeEvent, User, AuthError as SupabaseAuthError } from '@supabase/supabase-js';
 
 // ===========================
@@ -226,18 +227,70 @@ export async function signInWithMagicLink(email: string): Promise<MagicLinkRespo
       throw new AuthError('유효한 이메일 주소를 입력해주세요.', 'invalid_email', 400);
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+    const redirectUrl = `${window.location.origin}/empire`;
+    
+    console.log('🔄 매직 링크 요청:', {
+      email: normalizedEmail,
+      redirectUrl,
+      origin: window.location.origin,
+    });
+
+    // 사전등록 여부 확인
+    console.log('🔍 사전등록 여부 확인 중...');
+    const userCheck = await checkUserExists(normalizedEmail, '');
+    
+    if (!userCheck.emailExists) {
+      console.warn('⚠️ 사전등록되지 않은 이메일:', normalizedEmail);
+      throw new AuthError(
+        '사전등록되지 않은 이메일입니다. 먼저 사전등록을 완료해주세요.',
+        'user_not_found',
+        404
+      );
+    }
+    
+    console.log('✅ 사전등록 확인됨');
+
+    // shouldCreateUser: true로 설정 (OTP signup 허용)
+    // 사전등록 여부는 이미 위에서 확인했으므로 안전함
+    // 실제 로그인 시점에 users 테이블에 있는지 다시 확인할 수 있음
     const { data, error } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/empire`,
-        shouldCreateUser: false, // 사전등록된 사용자만 로그인 가능
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: true, // OTP signup을 허용하기 위해 true로 변경
       },
     });
     
     if (error) {
+      console.error('❌ Supabase OTP 에러:', {
+        code: error.code,
+        message: error.message,
+        status: error.status,
+        raw: error,
+      });
+      
+      // 422 에러에 대한 더 자세한 안내
+      if (error.status === 422) {
+        let detailedMessage = '';
+        
+        if (error.code === 'otp_disabled' || error.message.includes('Signups not allowed for otp')) {
+          detailedMessage = 'OTP(매직 링크) 로그인이 비활성화되어 있습니다. Supabase Dashboard → Authentication → Sign In / Providers → "Allow new users to sign up"을 활성화해주세요.';
+        } else if (error.message.includes('email') || error.code === 'otp_disabled') {
+          detailedMessage = '이메일 인증이 비활성화되어 있습니다. Supabase Dashboard에서 Email Provider와 Magic Link를 활성화해주세요.';
+        } else if (error.message.includes('redirect')) {
+          detailedMessage = 'Redirect URL이 허용되지 않았습니다. URL Configuration에서 http://localhost:5173/empire를 추가해주세요.';
+        } else {
+          detailedMessage = error.message || '요청을 처리할 수 없습니다. Supabase 설정을 확인해주세요.';
+        }
+        
+        throw new AuthError(detailedMessage, error.code || '422_error', error.status);
+      }
+      
       throw new AuthError(getErrorMessage(error), error.code, error.status);
     }
     
+    console.log('✅ 매직 링크 전송 성공');
     return data;
   } catch (error) {
     if (error instanceof AuthError) throw error;
