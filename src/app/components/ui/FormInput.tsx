@@ -11,6 +11,8 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   isValid?: boolean;
   showValidation?: boolean;
+  label?: string;
+  labelId?: string;
 }
 
 const sizeStyles = {
@@ -25,18 +27,36 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     error, 
     isValid,
     showValidation = false,
+    label,
+    labelId,
+    id,
     className = '',
     ...props 
   }, ref) => {
     const sizeClass = sizeStyles[inputSize];
     const hasError = !!error;
+    const inputId = id || labelId || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const ariaDescribedBy = error ? `${inputId}-error` : undefined;
 
     return (
       <div className="w-full">
+        {label && (
+          <label 
+            htmlFor={inputId}
+            className="block text-sm font-medium text-[var(--color-text-primary)] mb-2"
+          >
+            {label}
+            {props.required && <span className="text-[var(--color-accent-red)] ml-1">*</span>}
+          </label>
+        )}
         <div className="relative">
           <input
             ref={ref}
+            id={inputId}
             type={inputType}
+            aria-label={label || props['aria-label']}
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={hasError}
             className={`
               w-full ${sizeClass}
               bg-[var(--color-background-panel)]
@@ -73,8 +93,12 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         
         {/* Error Message */}
         {error && (
-          <p className="mt-2 text-sm text-[var(--color-accent-red)] flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
+          <p 
+            id={`${inputId}-error`}
+            className="mt-2 text-sm text-[var(--color-accent-red)] flex items-center gap-1"
+            role="alert"
+          >
+            <AlertCircle className="w-4 h-4" aria-hidden="true" />
             {error}
           </p>
         )}

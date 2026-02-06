@@ -10,6 +10,7 @@ interface CTAButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   size?: ButtonSize;
   loading?: boolean;
   disabled?: boolean;
+  ariaLabel?: string;
 }
 
 const buttonStyles = {
@@ -46,6 +47,7 @@ export function CTAButton({
   loading = false,
   disabled = false,
   className = '',
+  ariaLabel,
   ...props
 }: CTAButtonProps) {
   const styles = buttonStyles[buttonType];
@@ -55,6 +57,7 @@ export function CTAButton({
     <motion.button
       whileHover={!disabled && !loading ? { scale: 1.02 } : {}}
       whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
+      aria-label={ariaLabel || (typeof children === 'string' ? children : undefined)}
       className={`
         ${styles.base}
         ${styles.hover}

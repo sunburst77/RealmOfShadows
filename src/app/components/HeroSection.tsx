@@ -195,6 +195,7 @@ export function HeroSection({ translations }: HeroSectionProps) {
               type="primary"
               size="large"
               onClick={scrollToRegistration}
+              ariaLabel={`${translations.cta} - 사전등록 섹션으로 이동`}
               className="px-12"
               style={{
                 background: 'linear-gradient(180deg, var(--color-primary-gold-dark) 0%, #92400e 100%)',

@@ -254,6 +254,7 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                     size="large"
                     className="w-full"
                     disabled={isLoading}
+                    ariaLabel={translations.openModalButton}
                   >
                     {translations.openModalButton}
                   </CTAButton>
@@ -272,10 +273,11 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                   <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     {/* Name */}
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" aria-hidden="true" />
                       <FormInput
                         inputType="text"
                         inputSize="medium"
+                        label={translations.modal.nameLabel || translations.modal.namePlaceholder}
                         placeholder={translations.modal.namePlaceholder}
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
@@ -283,15 +285,17 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                         className="pl-11"
                         required
                         disabled={isLoading}
+                        aria-label={translations.modal.nameLabel || translations.modal.namePlaceholder}
                       />
                     </div>
 
                     {/* Email */}
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" aria-hidden="true" />
                       <FormInput
                         inputType="email"
                         inputSize="medium"
+                        label={translations.form.emailLabel || translations.form.emailPlaceholder}
                         placeholder={translations.form.emailPlaceholder}
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
@@ -300,15 +304,17 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                         className="pl-11"
                         required
                         disabled={isLoading}
+                        aria-label={translations.form.emailLabel || translations.form.emailPlaceholder}
                       />
                     </div>
 
                     {/* Nickname */}
                     <div className="relative">
-                      <GamepadIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
+                      <GamepadIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" aria-hidden="true" />
                       <FormInput
                         inputType="text"
                         inputSize="medium"
+                        label={translations.form.nicknameLabel || translations.form.nicknamePlaceholder}
                         placeholder={translations.form.nicknamePlaceholder}
                         value={formData.nickname}
                         onChange={(e) => handleInputChange('nickname', e.target.value)}
@@ -317,22 +323,24 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                         className="pl-11"
                         required
                         disabled={isLoading}
+                        aria-label={translations.form.nicknameLabel || translations.form.nicknamePlaceholder}
                       />
                     </div>
 
                     {/* Phone */}
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" aria-hidden="true" />
                       <FormInput
                         inputType="tel"
                         inputSize="medium"
+                        label={translations.modal.phonePlaceholder}
                         placeholder={translations.modal.phonePlaceholder}
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
                         error={errors.phone}
                         className="pl-11"
-                        required
                         disabled={isLoading}
+                        aria-label={translations.modal.phonePlaceholder}
                       />
                     </div>
 
@@ -369,6 +377,7 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                       loading={isLoading}
                       disabled={!agreedToPolicy || isLoading}
                       className="w-full mt-6"
+                      ariaLabel={isLoading ? translations.modal.processingText : translations.form.submitButton}
                     >
                       {isLoading ? translations.modal.processingText : translations.form.submitButton}
                     </CTAButton>
@@ -472,6 +481,7 @@ export function PreRegistrationSection({ translations, language }: PreRegistrati
                   const element = document.getElementById('characters');
                   element?.scrollIntoView({ behavior: 'smooth' });
                 }}
+                ariaLabel={language === 'ko' ? '에피소드 보기 - 캐릭터 섹션으로 이동' : language === 'en' ? 'View Episode - Navigate to Characters Section' : 'エピソードを見る - キャラクターセクションへ移動'}
               >
                 {language === 'ko' ? '에피소드 보기' : language === 'en' ? 'View Episode' : 'エピソードを見る'}
               </CTAButton>

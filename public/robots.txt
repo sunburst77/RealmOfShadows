@@ -1,0 +1,10 @@
+# robots.txt for Realm of Shadows
+# https://realm-of-shadows.vercel.app/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /empire
+
+# Sitemap
+Sitemap: https://realm-of-shadows.vercel.app/sitemap.xml

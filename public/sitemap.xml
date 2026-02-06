@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- 메인 페이지 -->
+  <url>
+    <loc>https://realm-of-shadows.vercel.app/</loc>
+    <lastmod>2025-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://realm-of-shadows.vercel.app/?lang=ko" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://realm-of-shadows.vercel.app/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://realm-of-shadows.vercel.app/?lang=ja" />
+  </url>
+  
+  <!-- 한국어 버전 -->
+  <url>
+    <loc>https://realm-of-shadows.vercel.app/?lang=ko</loc>
+    <lastmod>2025-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://realm-of-shadows.vercel.app/?lang=ko" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://realm-of-shadows.vercel.app/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://realm-of-shadows.vercel.app/?lang=ja" />
+  </url>
+  
+  <!-- 영어 버전 -->
+  <url>
+    <loc>https://realm-of-shadows.vercel.app/?lang=en</loc>
+    <lastmod>2025-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://realm-of-shadows.vercel.app/?lang=ko" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://realm-of-shadows.vercel.app/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://realm-of-shadows.vercel.app/?lang=ja" />
+  </url>
+  
+  <!-- 일본어 버전 -->
+  <url>
+    <loc>https://realm-of-shadows.vercel.app/?lang=ja</loc>
+    <lastmod>2025-01-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://realm-of-shadows.vercel.app/?lang=ko" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://realm-of-shadows.vercel.app/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://realm-of-shadows.vercel.app/?lang=ja" />
+  </url>
+</urlset>

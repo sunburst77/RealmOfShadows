@@ -130,10 +130,11 @@ export function NavigationOverlay({ translations, currentLanguage, onLanguageCha
                         scrollToSection(item.id);
                       }
                     }}
+                    aria-label={`${item.label} 섹션으로 이동`}
                     className="text-sm xl:text-base text-[var(--color-text-secondary)] hover:text-[var(--color-primary-gold)] transition-colors duration-[var(--transition-normal)] relative group whitespace-nowrap"
                   >
                     {item.label}
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--color-primary-gold)] group-hover:w-full transition-all duration-[var(--transition-normal)]" />
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--color-primary-gold)] group-hover:w-full transition-all duration-[var(--transition-normal)]" aria-hidden="true" />
                   </button>
                 ))}
               </div>
@@ -149,18 +150,20 @@ export function NavigationOverlay({ translations, currentLanguage, onLanguageCha
                   </div>
                   <button
                     onClick={handleLogout}
+                    aria-label={translations.logout}
                     className="flex items-center gap-1.5 xl:gap-2 px-2 xl:px-4 py-1 xl:py-2 rounded-lg border border-[var(--color-border-gold)] text-[var(--color-text-secondary)] hover:text-[var(--color-primary-gold)] hover:border-[var(--color-primary-gold)] transition-all text-xs xl:text-sm"
                   >
-                    <LogOut className="w-3.5 xl:w-4 h-3.5 xl:h-4" />
+                    <LogOut className="w-3.5 xl:w-4 h-3.5 xl:h-4" aria-hidden="true" />
                     <span className="hidden xl:inline">{translations.logout}</span>
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={handleLogin}
+                  aria-label={translations.login}
                   className="flex items-center gap-1.5 xl:gap-2 px-2 xl:px-4 py-1 xl:py-2 rounded-lg border border-[var(--color-border-gold)] text-[var(--color-text-secondary)] hover:text-[var(--color-primary-gold)] hover:border-[var(--color-primary-gold)] transition-all text-xs xl:text-sm"
                 >
-                  <LogIn className="w-3.5 xl:w-4 h-3.5 xl:h-4" />
+                  <LogIn className="w-3.5 xl:w-4 h-3.5 xl:h-4" aria-hidden="true" />
                   <span className="hidden xl:inline">{translations.login}</span>
                 </button>
               )}
@@ -170,6 +173,7 @@ export function NavigationOverlay({ translations, currentLanguage, onLanguageCha
                 onClick={() => scrollToSection(registrationItem.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                aria-label={`${registrationItem.label} 섹션으로 이동`}
                 className="px-3 xl:px-6 py-1.5 xl:py-2 rounded-lg font-medium transition-all duration-[var(--transition-normal)] text-xs xl:text-sm whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(180deg, var(--color-primary-gold-dark) 0%, #92400e 100%)',
@@ -198,12 +202,21 @@ export function NavigationOverlay({ translations, currentLanguage, onLanguageCha
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(!isMobileMenuOpen);
+                }
+              }}
               className="lg:hidden p-2 text-[var(--color-primary-gold)] hover:bg-[var(--color-primary-gold)]/10 rounded-lg transition-colors duration-[var(--transition-normal)]"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
+                <X className="w-6 h-6" aria-hidden="true" />
               ) : (
-                <Menu className="w-6 h-6" />
+                <Menu className="w-6 h-6" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -233,6 +246,17 @@ export function NavigationOverlay({ translations, currentLanguage, onLanguageCha
                       handleEmpireClick();
                     } else {
                       scrollToSection(item.id);
+                    }
+                  }}
+                  aria-label={`${item.label} 섹션으로 이동`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (item.id === 'empire') {
+                        handleEmpireClick();
+                      } else {
+                        scrollToSection(item.id);
+                      }
                     }
                   }}
                   className="text-left py-3 sm:py-4 text-base sm:text-lg text-[var(--color-text-secondary)] hover:text-[var(--color-primary-gold)] border-b border-[var(--color-border-gold)]/10 transition-colors duration-[var(--transition-normal)]"

@@ -9,6 +9,8 @@ import { LoginPage } from './pages/LoginPage';
 import { EmpirePage } from './pages/EmpirePage';
 import { Language, translations } from './translations';
 import { supabase } from '@/lib/supabase';
+import { SEO } from './components/SEO';
+import { StructuredData } from './components/StructuredData';
 
 function AppContent() {
   const [language, setLanguage] = useState<Language>('ko');
@@ -90,6 +92,22 @@ function AppContent() {
         color: 'var(--color-text-primary)'
       }}
     >
+      {/* SEO */}
+      <SEO 
+        title={location.pathname === '/login' ? '로그인 - Realm of Shadows' : location.pathname === '/empire' ? '나의 제국 - Realm of Shadows' : 'Realm of Shadows - Pre-registration'}
+        description={location.pathname === '/login' ? 'Realm of Shadows 로그인 페이지' : location.pathname === '/empire' ? '나의 제국 - 추천인 네트워크 및 보상 확인' : '다크 판타지 게임 Realm of Shadows 사전등록 페이지. 지금 사전등록하고 특별한 보상을 받으세요!'}
+        language={language}
+      />
+      <StructuredData language={language} />
+      
+      {/* 스킵 링크 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--color-primary-gold)] focus:text-[var(--color-background-deep-black)] focus:rounded-lg focus:font-semibold"
+      >
+        메인 콘텐츠로 건너뛰기
+      </a>
+      
       {/* 네비게이션 (로그인 페이지 제외) */}
       {!isLoginPage && (
         <NavigationOverlay 
@@ -100,12 +118,13 @@ function AppContent() {
       )}
       
       {/* 라우트 */}
-      <Routes>
-        {/* 홈 페이지 (랜딩 페이지) */}
-        <Route 
-          path="/" 
-          element={<HomePage translations={t} language={language} />} 
-        />
+      <main id="main-content">
+        <Routes>
+          {/* 홈 페이지 (랜딩 페이지) */}
+          <Route 
+            path="/" 
+            element={<HomePage translations={t} language={language} />} 
+          />
         
         {/* 로그인 페이지 */}
         <Route 
@@ -126,7 +145,8 @@ function AppContent() {
             </ProtectedRoute>
           } 
         />
-      </Routes>
+        </Routes>
+      </main>
 
       {/* 푸터 (로그인 페이지와 Empire 페이지 제외) */}
       {!isLoginPage && !isEmpirePage && (
