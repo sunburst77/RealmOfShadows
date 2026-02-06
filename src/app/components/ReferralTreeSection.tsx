@@ -1,451 +1,479 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Copy, Share2, ChevronDown, Crown, Users } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Copy, Share2, ChevronDown, Crown, Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CTAButton } from './ui/CTAButton';
-import { Translations } from '../translations';
+import { TreeNodeCard } from './ui/TreeNodeCard';
+import { Translations, Language } from '../translations';
+import { getReferralNetwork, getUserByReferralCode } from '@/lib/supabase';
+import type { ReferralNode as ApiReferralNode } from '@/lib/supabase/types';
+import { getLocalStorageItem, STORAGE_KEYS } from '@/lib/utils/local-storage';
 
 interface TreeNode {
   id: string;
-  avatar: string;
   nickname: string;
   children: TreeNode[];
   level: number;
 }
 
-const getMockTreeData = (translations: Translations['referral']): TreeNode => ({
-  id: 'you',
-  nickname: translations.rootNickname,
-  avatar: '👑',
-  level: 0,
-  children: [
-    {
-      id: '1',
-      nickname: translations.mockFriends.friendA,
-      avatar: '⚔️',
-      level: 1,
-      children: [
-        { id: '1-1', nickname: translations.mockFriends.friendA1, avatar: '🛡️', level: 2, children: [] },
-        { id: '1-2', nickname: translations.mockFriends.friendA2, avatar: '🗡️', level: 2, children: [] }
-      ]
-    },
-    {
-      id: '2',
-      nickname: translations.mockFriends.friendB,
-      avatar: '🏹',
-      level: 1,
-      children: [
-        { id: '2-1', nickname: translations.mockFriends.friendB1, avatar: '⚡', level: 2, children: [] }
-      ]
-    },
-    {
-      id: '3',
-      nickname: translations.mockFriends.friendC,
-      avatar: '🔮',
-      level: 1,
-      children: []
-    }
-  ]
-});
-
 interface ReferralTreeSectionProps {
   translations: Translations['referral'];
+  language: Language;
 }
 
-export function ReferralTreeSection({ translations }: ReferralTreeSectionProps) {
-  const [referralLink] = useState('https://realmofshadows.com/invite/abc123xyz');
-  const mockTreeData = getMockTreeData(translations);
-  const empireSize = 1 + mockTreeData.children.length + 
-    mockTreeData.children.reduce((acc, child) => acc + child.children.length, 0);
+// 사용자 정보 타입
+interface StoredUserData {
+  userId: string;
+  referralCode: string;
+  nickname: string;
+  email: string;
+}
 
+export function ReferralTreeSection({ translations, language }: ReferralTreeSectionProps) {
+  const [userData, setUserData] = useState<StoredUserData | null>(null);
+  const [treeData, setTreeData] = useState<TreeNode | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [empireSize, setEmpireSize] = useState(0);
+  const [directInvites, setDirectInvites] = useState(0);
+  const [indirectInvites, setIndirectInvites] = useState(0);
+
+  // 메모리 누수 방지용 ref
+  const isMountedRef = useRef(true);
+
+  // 컴포넌트 언마운트 감지
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // 로컬 스토리지에서 사용자 정보 로드
+  useEffect(() => {
+    const loadUserData = () => {
+      const stored = getLocalStorageItem<StoredUserData>(STORAGE_KEYS.USER_DATA);
+      
+      if (stored) {
+        setUserData(stored);
+        console.log('✅ 사용자 정보 로드:', stored);
+      } else {
+        console.log('ℹ️ 저장된 사용자 정보 없음');
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // 추천 네트워크 로드
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReferralNetwork() {
+      if (!userData?.userId) {
+        if (!cancelled && isMountedRef.current) {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled && isMountedRef.current) {
+        setIsLoading(true);
+      }
+
+      try {
+        const result = await getReferralNetwork(userData.userId);
+
+        // 컴포넌트가 언마운트되었거나 취소되었으면 setState 하지 않음
+        if (cancelled || !isMountedRef.current) return;
+
+        if (!result.success || !result.network) {
+          console.warn('추천 네트워크를 불러오지 못했습니다:', result.error);
+          setTreeData(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // API 응답을 UI TreeNode 형식으로 변환
+        const convertedTree: TreeNode = {
+          id: userData.userId,
+          nickname: userData.nickname,
+          level: 0,
+          children: result.network.map((level1Node) => ({
+            id: level1Node.userId,
+            nickname: level1Node.nickname,
+            level: 1,
+            children: (level1Node.children || []).map((level2Node) => ({
+              id: level2Node.userId,
+              nickname: level2Node.nickname,
+              level: 2,
+              children: [],
+            })),
+          })),
+        };
+
+        setTreeData(convertedTree);
+        setDirectInvites(result.stats?.directInvites || 0);
+        setIndirectInvites(result.stats?.indirectInvites || 0);
+        setEmpireSize(result.stats?.totalSize || 1);
+
+        console.log('✅ 추천 네트워크 로드 성공:', {
+          directInvites: result.stats?.directInvites,
+          indirectInvites: result.stats?.indirectInvites,
+          totalSize: result.stats?.totalSize,
+        });
+      } catch (error) {
+        console.error('Failed to load referral network:', error);
+        if (!cancelled && isMountedRef.current) {
+          setTreeData(null);
+        }
+      } finally {
+        if (!cancelled && isMountedRef.current) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadReferralNetwork();
+
+    // Cleanup: 비동기 작업 취소
+    return () => {
+      cancelled = true;
+    };
+  }, [userData]);
+
+  // 추천 링크 복사
   const copyReferralLink = () => {
-    // Try modern clipboard API first, fallback to older method
+    if (!userData?.referralCode) {
+      toast.error(language === 'ko' 
+        ? '사전등록을 먼저 완료해주세요' 
+        : language === 'en'
+        ? 'Please complete pre-registration first'
+        : 'まず事前登録を完了してください'
+      );
+      return;
+    }
+
+    const referralLink = `${window.location.origin}?ref=${userData.referralCode}`;
+
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(referralLink)
         .then(() => {
-          toast.success(translations.copySuccess);
+          toast.success(translations?.copySuccess || '복사되었습니다');
         })
         .catch(() => {
-          // Fallback to older method
           fallbackCopyTextToClipboard(referralLink);
         });
     } else {
-      // Use fallback method
       fallbackCopyTextToClipboard(referralLink);
     }
   };
 
+  // Fallback 복사 메서드
   const fallbackCopyTextToClipboard = (text: string) => {
     const textArea = document.createElement('textarea');
     textArea.value = text;
     textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.opacity = '0';
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
-      document.execCommand('copy');
-      toast.success(translations.copySuccess);
+      const successful = document.execCommand('copy');
+      if (successful) {
+        toast.success(translations.copySuccess);
+      } else {
+        toast.error(translations?.copyError || '복사 실패');
+      }
     } catch (err) {
-      toast.error(translations.copyFailed);
+      console.error('Fallback copy failed:', err);
+      toast.error(translations.copyError);
     }
-    
+
     document.body.removeChild(textArea);
   };
 
-  const shareToSocial = (platform: string) => {
-    toast.info(`${platform}${translations.shareToast}`);
+  // 공유 기능
+  const shareReferralLink = async () => {
+    if (!userData?.referralCode) {
+      toast.error(language === 'ko' 
+        ? '사전등록을 먼저 완료해주세요' 
+        : language === 'en'
+        ? 'Please complete pre-registration first'
+        : 'まず事前登録を完了してください'
+      );
+      return;
+    }
+
+    const referralLink = `${window.location.origin}?ref=${userData.referralCode}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Realm of Shadows',
+          text: translations?.shareText || '',
+          url: referralLink,
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed:', err);
+      }
+    } else {
+      copyReferralLink();
+    }
   };
 
-  const directInvites = mockTreeData.children.length;
-  const indirectInvites = mockTreeData.children.reduce((acc, child) => acc + child.children.length, 0);
+  // 트리 노드 렌더링 (재귀)
+  const renderTreeNode = (node: TreeNode, isRoot = false) => {
+    const [isExpanded, setIsExpanded] = useState(true);
+    const hasChildren = node.children.length > 0;
+
+    return (
+      <div key={node.id} className="relative">
+        {/* Tree Node Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative"
+        >
+          <TreeNodeCard
+            avatar={isRoot ? '👑' : node.level === 1 ? '⚔️' : '🛡️'}
+            nickname={node.nickname}
+            isRoot={isRoot}
+            isExpanded={isExpanded}
+            hasChildren={hasChildren}
+            onToggle={() => setIsExpanded(!isExpanded)}
+            level={node.level}
+          />
+        </motion.div>
+
+        {/* Children */}
+        <AnimatePresence>
+          {hasChildren && isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 ml-8 space-y-4 border-l-2 border-[var(--color-border-gold)]/20 pl-6"
+            >
+              {node.children.map((child) => renderTreeNode(child, false))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
-    <section 
-      className="relative min-h-screen py-[var(--spacing-3xl)] px-4"
-      style={{ 
-        background: 'linear-gradient(to bottom, var(--color-background-deep-black), var(--color-primary-gold)/3, var(--color-background-deep-black))' 
+    <section
+      className="relative min-h-screen flex flex-col items-center justify-center py-12 sm:py-16 md:py-20 lg:py-[var(--spacing-3xl)] px-4 sm:px-6 md:px-8"
+      style={{
+        background: `linear-gradient(to bottom, var(--color-background-deep-black), var(--color-primary-gold)/5, var(--color-background-deep-black))`,
       }}
     >
-      <div className="max-w-7xl mx-auto space-y-[var(--spacing-2xl)]">
-        {/* Section Header */}
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 50px, var(--color-primary-gold)/10 50px, var(--color-primary-gold)/10 51px)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 max-w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl w-full mx-auto">
+        {/* Section Title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: -30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center"
+          className="text-center mb-8 sm:mb-12 md:mb-16 lg:mb-[var(--spacing-2xl)]"
         >
-          <h2 
-            className="font-['Cinzel'] text-[var(--text-heading-1)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-md)] text-center"
-            style={{ letterSpacing: '-1px' }}
+          <h2
+            className="font-['Cinzel'] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 md:mb-[var(--spacing-md)]"
+            style={{
+              color: 'var(--color-primary-gold)',
+              letterSpacing: '-1px',
+            }}
           >
-            {translations.title}
+            {translations?.title || '나의 제국'}
           </h2>
-          <p className="text-[var(--text-body-large)] text-[var(--color-text-secondary)] mb-[var(--spacing-2xl)] text-center max-w-2xl mx-auto">
-            {translations.subtitle}
+          <p className="text-[var(--color-text-primary)] text-sm sm:text-base md:text-lg">
+            {translations?.subtitle || '친구를 초대하고 함께 어둠의 군주가 되어라'}
           </p>
         </motion.div>
 
-        {/* Stats Cards Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-[var(--spacing-lg)]"
-        >
-          {/* Total Empire Size */}
-          <motion.div 
-            whileHover={{ scale: 1.02, y: -4 }}
-            className="bg-gradient-to-br from-[var(--color-primary-gold)]/20 to-[var(--color-background-panel)] border border-[var(--color-border-gold)]/50 rounded-xl p-5 backdrop-blur-sm hover:shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all"
+        {/* Empire Stats */}
+        {userData && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 md:mb-[var(--spacing-2xl)]"
           >
-            <div className="flex items-center gap-4">
-              <Crown className="w-10 h-10 text-[var(--color-primary-gold)]" />
-              <div className="flex-1">
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-3xl font-bold font-mono text-[var(--color-primary-gold)] mb-1"
-                >
-                  {empireSize}
-                </motion.div>
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">{translations.empireSizeLabel}</p>
-              </div>
+            {/* Total Empire Size */}
+            <div
+              className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-6 text-center"
+              style={{ boxShadow: 'var(--shadow-card)' }}
+            >
+              <Crown className="w-12 h-12 text-[var(--color-primary-gold)] mx-auto mb-4" />
+              <p className="text-4xl font-bold text-[var(--color-primary-gold)] mb-2">
+                {empireSize}
+              </p>
+              <p className="text-[var(--color-text-secondary)]">{translations?.stats?.empireSize || '제국 규모'}</p>
+            </div>
+
+            {/* Direct Invites */}
+            <div
+              className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-6 text-center"
+              style={{ boxShadow: 'var(--shadow-card)' }}
+            >
+              <Users className="w-12 h-12 text-[var(--color-primary-gold)] mx-auto mb-4" />
+              <p className="text-4xl font-bold text-[var(--color-primary-gold)] mb-2">
+                {directInvites}
+              </p>
+              <p className="text-[var(--color-text-secondary)]">{translations?.stats?.directInvites || '직접 초대'}</p>
+            </div>
+
+            {/* Indirect Invites */}
+            <div
+              className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-6 text-center"
+              style={{ boxShadow: 'var(--shadow-card)' }}
+            >
+              <Users className="w-12 h-12 text-[var(--color-primary-gold)] mx-auto mb-4" />
+              <p className="text-4xl font-bold text-[var(--color-primary-gold)] mb-2">
+                {indirectInvites}
+              </p>
+              <p className="text-[var(--color-text-secondary)]">{translations?.stats?.indirectInvites || '간접 초대'}</p>
             </div>
           </motion.div>
+        )}
 
-          {/* Direct Invites */}
-          <motion.div 
-            whileHover={{ scale: 1.02, y: -4 }}
-            className="bg-[var(--color-background-panel)] border border-[var(--color-border-gold)]/30 rounded-xl p-5 backdrop-blur-sm hover:border-[var(--color-border-gold)]/50 hover:shadow-[0_8px_30px_rgba(212,175,55,0.2)] transition-all"
-          >
-            <div className="flex items-center gap-4">
-              <Users className="w-10 h-10 text-[var(--color-primary-gold)]" />
-              <div className="flex-1">
-                <div className="text-3xl font-bold font-mono text-[var(--color-text-primary)] mb-1">
-                  {directInvites}
-                </div>
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">{translations.directInvitesLabel}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Indirect Invites */}
-          <motion.div 
-            whileHover={{ scale: 1.02, y: -4 }}
-            className="bg-[var(--color-background-panel)] border border-[var(--color-border-gold)]/20 rounded-xl p-5 backdrop-blur-sm hover:border-[var(--color-border-gold)]/40 hover:shadow-[0_8px_30px_rgba(212,175,55,0.15)] transition-all"
-          >
-            <div className="flex items-center gap-4">
-              <Share2 className="w-10 h-10 text-[var(--color-primary-gold)]/70" />
-              <div className="flex-1">
-                <div className="text-3xl font-bold font-mono text-[var(--color-text-secondary)] mb-1">
-                  {indirectInvites}
-                </div>
-                <p className="text-sm font-medium text-[var(--color-text-muted)]">{translations.level2Label}</p>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Invite Link Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          <div 
-            className="bg-[var(--color-background-panel)] rounded-2xl p-[var(--spacing-xl)]"
+        {/* Referral Link Section */}
+        {userData ? (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-xl)] mb-[var(--spacing-2xl)]"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
-            <h3 className="text-[var(--text-heading-3)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-lg)] flex items-center gap-3">
-              <Copy className="w-6 h-6" />
-              {translations.inviteLinkLabel}
+            <h3 className="text-2xl text-[var(--color-primary-gold)] font-semibold mb-4">
+              {translations?.shareTitle || '친구 초대하기'}
             </h3>
-            
-            <div className="flex gap-4 flex-col sm:flex-row mb-[var(--spacing-lg)]">
-              <input
-                type="text"
-                value={referralLink}
-                readOnly
-                className="flex-1 px-5 py-4 bg-[var(--color-background-dark)] border-2 border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] font-mono text-base focus:border-[var(--color-border-gold)] focus:outline-none transition-colors"
-              />
-              <CTAButton
-                type="secondary"
-                size="medium"
-                onClick={copyReferralLink}
-                className="sm:w-auto"
-              >
-                <Copy className="w-5 h-5" />
-                {translations.copyButton}
-              </CTAButton>
+            <p className="text-[var(--color-text-secondary)] mb-6">
+              {translations?.shareDescription || '아래 링크를 공유하여 친구를 초대하세요'}
+            </p>
+
+            {/* Referral Code Display */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+              <div className="flex-1 w-full">
+                <div className="bg-[var(--color-background-dark)] border-2 border-[var(--color-border-gold)]/30 rounded-lg px-4 py-3 font-mono text-[var(--color-primary-gold)] text-lg">
+                  {window.location.origin}?ref=<span className="font-bold">{userData.referralCode}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <CTAButton type="secondary" size="medium" onClick={copyReferralLink}>
+                  <Copy className="w-5 h-5 mr-2" />
+                  {translations?.copyButton || '복사'}
+                </CTAButton>
+                <CTAButton type="primary" size="medium" onClick={shareReferralLink}>
+                  <Share2 className="w-5 h-5 mr-2" />
+                  {translations?.shareButton || '공유'}
+                </CTAButton>
+              </div>
             </div>
 
-            {/* Social Share Buttons */}
-            <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
-              {['Twitter', 'Facebook', 'KakaoTalk'].map((platform) => (
-                <motion.button
-                  key={platform}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => shareToSocial(platform)}
-                  className="px-5 py-3 bg-[var(--color-background-dark)] hover:bg-[var(--color-primary-gold)]/10 border-2 border-[var(--color-border-gold)]/30 hover:border-[var(--color-border-gold)] rounded-lg text-[var(--color-primary-gold)] text-base font-semibold transition-all duration-[var(--transition-normal)] flex items-center gap-2"
-                >
-                  <Share2 className="w-5 h-5" />
-                  {platform}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Network & Progress Container */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div 
-            className="relative bg-[var(--color-background-panel)]/50 backdrop-blur-sm rounded-2xl p-[var(--spacing-xl)]"
-            style={{ boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.2)' }}
-          >
-            {/* Section Title */}
-            <div className="mb-[var(--spacing-xl)] text-center">
-              <h3 className="font-['Cinzel'] text-[var(--text-heading-2)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-sm)] flex items-center justify-center gap-3">
-                <Users className="w-8 h-8" />
-                {translations.networkTitle}
-              </h3>
-              <p className="text-[var(--text-body-large)] text-[var(--color-text-secondary)]">
-                {translations.networkSubtitle}
+            {/* Reward Preview */}
+            <div className="bg-[var(--color-accent-red)]/10 border border-[var(--color-accent-red)]/30 rounded-lg p-4">
+              <p className="text-[var(--color-text-primary)] text-sm">
+                💎 <strong>{translations?.rewardPreview?.title || '보상'}:</strong> {translations?.rewardPreview?.description || '친구를 초대하고 보상을 받으세요'}
               </p>
             </div>
-
-            {/* 2-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--spacing-xl)]">
-              {/* Left Column - Profile & Progress */}
-              <div className="space-y-[var(--spacing-xl)]">
-                {/* Your Profile Card */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, type: "spring" }}
-                >
-                  <div className="relative bg-gradient-to-br from-[var(--color-primary-gold)] to-[var(--color-primary-gold-dark)] rounded-2xl p-[var(--spacing-xl)] overflow-hidden shadow-[0_8px_30px_rgba(212,175,55,0.5)]">
-                    {/* Decorative Background */}
-                    <div className="absolute inset-0 opacity-10">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-background-deep-black)] rounded-full blur-3xl" />
-                    </div>
-
-                    {/* Crown Icon */}
-                    <motion.div
-                      animate={{ rotate: [0, 5, -5, 0], y: [0, -4, 0] }}
-                      transition={{ duration: 4, repeat: Infinity }}
-                      className="absolute top-6 right-6"
-                    >
-                      <Crown className="w-10 h-10 text-[var(--color-background-deep-black)]" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
-                    </motion.div>
-
-                    <div className="relative flex items-center gap-6">
-                      <div className="text-6xl">{mockTreeData.avatar}</div>
-                      <div className="flex-1">
-                        <div className="inline-block px-3 py-1 bg-[var(--color-background-deep-black)]/20 rounded-full mb-2">
-                          <p className="text-xs font-semibold text-[var(--color-background-deep-black)]/70 uppercase tracking-wide">
-                            {translations.rootNickname}
-                          </p>
-                        </div>
-                        <h4 className="text-3xl font-bold text-[var(--color-background-deep-black)] mb-3">
-                          {mockTreeData.nickname}
-                        </h4>
-                        <div className="flex items-center gap-2 text-[var(--color-background-deep-black)]/80">
-                          <Users className="w-5 h-5" />
-                          <span className="text-base font-semibold">
-                            {translations.totalInvited}: <span className="text-xl">{empireSize - 1}</span>{translations.treeNode.peopleCountUnit}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Progress Info */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                >
-                  <div className="bg-gradient-to-br from-[var(--color-primary-gold)]/5 to-transparent rounded-xl p-[var(--spacing-lg)]">
-                    <h4 className="text-[var(--text-heading-3)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-lg)] flex items-center gap-3">
-                      <ChevronDown className="w-6 h-6" />
-                      {translations.progress.title}
-                    </h4>
-                    <div className="space-y-[var(--spacing-md)]">
-                      {/* Progress Item 1 */}
-                      <div className="flex items-center justify-between p-5 bg-[var(--color-background-panel)] rounded-lg">
-                        <span className="text-[var(--text-body-large)] text-[var(--color-text-primary)] font-medium">
-                          {translations.progress.inviteGoal} 1{translations.progress.peopleCount}
-                        </span>
-                        <span className="text-[var(--color-primary-gold)] font-bold flex items-center gap-2">
-                          <div className="w-7 h-7 bg-[var(--color-primary-gold)] rounded-full flex items-center justify-center text-[var(--color-background-deep-black)] text-sm">
-                            ✓
-                          </div>
-                          {translations.progress.completed}
-                        </span>
-                      </div>
-
-                      {/* Progress Item 2 */}
-                      <div className="flex items-center justify-between p-5 bg-[var(--color-background-panel)] rounded-lg">
-                        <span className="text-[var(--text-body-large)] text-[var(--color-text-primary)] font-medium">
-                          {translations.progress.inviteGoal} 3{translations.progress.peopleCount}
-                        </span>
-                        <div className="flex items-center gap-4">
-                          <div className="w-36 h-2.5 bg-[var(--color-background-dark)] rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: '66%' }}
-                              transition={{ duration: 1, delay: 0.5 }}
-                              className="h-full bg-gradient-to-r from-[var(--color-primary-gold)] to-[var(--color-primary-gold-light)] rounded-full"
-                            />
-                          </div>
-                          <span className="text-[var(--color-primary-gold)] font-bold text-base min-w-[45px]">
-                            2/3
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Progress Item 3 */}
-                      <div className="flex items-center justify-between p-5 bg-[var(--color-background-panel)]/50 rounded-lg">
-                        <span className="text-[var(--text-body-large)] text-[var(--color-text-secondary)] font-medium">
-                          {translations.progress.inviteGoal} 5{translations.progress.peopleCount}
-                        </span>
-                        <span className="text-[var(--color-text-muted)] font-bold text-base">0/5</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Right Column - Friends List */}
-              {mockTreeData.children.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <div className="flex items-center gap-3 mb-[var(--spacing-lg)]">
-                    <div className="w-1.5 h-10 bg-gradient-to-b from-[var(--color-primary-gold)] to-transparent rounded-full" />
-                    <h4 className="text-[var(--text-heading-3)] font-bold text-[var(--color-primary-gold)]">
-                      {translations.directInvitesLabel} <span className="text-[var(--color-text-secondary)] font-normal text-[var(--text-body-large)]">
-                        ({mockTreeData.children.length}{translations.treeNode.peopleCountUnit})
-                      </span>
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-[var(--spacing-lg)]">
-                  {mockTreeData.children.map((friend, index) => {
-                    const subFriends = friend.children.length;
-                    return (
-                      <motion.div
-                        key={friend.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.1 * index, type: "spring" }}
-                        whileHover={{ scale: 1.03, y: -8 }}
-                        className="bg-[var(--color-background-panel)] border border-[var(--color-primary-gold)]/30 rounded-xl p-5 hover:border-[var(--color-primary-gold)] hover:shadow-[0_8px_30px_rgba(212,175,55,0.3)] transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="text-3xl">{friend.avatar}</div>
-                            <div>
-                              <p className="font-semibold text-[var(--color-text-primary)]">
-                                {friend.nickname}
-                              </p>
-                              <p className="text-xs text-[var(--color-text-muted)]">
-                                {translations.level1Label}
-                              </p>
-                            </div>
-                          </div>
-                          {subFriends > 0 && (
-                            <div className="bg-[var(--color-primary-gold)]/20 text-[var(--color-primary-gold)] px-2 py-1 rounded-full text-xs font-bold">
-                              +{subFriends}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Sub Friends */}
-                        {subFriends > 0 && (
-                          <div className="pt-3 border-t border-[var(--color-border-gold)]/10">
-                            <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-                              {translations.level2Label} ({subFriends}{translations.treeNode.peopleCountUnit})
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {friend.children.map((subFriend) => (
-                                <div
-                                  key={subFriend.id}
-                                  className="flex items-center gap-1 bg-[var(--color-background-dark)] px-2 py-1 rounded-md"
-                                >
-                                  <span className="text-sm">{subFriend.avatar}</span>
-                                  <span className="text-xs text-[var(--color-text-secondary)]">
-                                    {subFriend.nickname}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                  </div>
-                </motion.div>
-              )}
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-xl)] mb-[var(--spacing-2xl)] text-center"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
+            <Users className="w-16 h-16 text-[var(--color-primary-gold)] mx-auto mb-4 opacity-50" />
+            <h3 className="text-2xl text-[var(--color-primary-gold)] font-semibold mb-4">
+              {language === 'ko' ? '사전등록 후 추천 시스템을 이용하세요' : language === 'en' ? 'Complete Pre-Registration to Use Referral System' : '事前登録後、紹介システムをご利用ください'}
+            </h3>
+            <p className="text-[var(--color-text-secondary)] mb-6">
+              {language === 'ko' 
+                ? '사전등록을 완료하면 나만의 추천 코드를 받고 친구를 초대할 수 있습니다.'
+                : language === 'en'
+                ? 'Complete pre-registration to receive your unique referral code and invite friends.'
+                : '事前登録を完了すると、独自の紹介コードを受け取り、友達を招待できます。'
+              }
+            </p>
+            <div className="flex justify-center">
+              <CTAButton
+                type="primary"
+                size="large"
+                onClick={() => {
+                  const element = document.getElementById('registration');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                {language === 'ko' ? '사전등록 하러 가기' : language === 'en' ? 'Go to Pre-Registration' : '事前登録に移動'}
+              </CTAButton>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
+
+        {/* Referral Tree Visualization */}
+        {userData && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-xl)]"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
+            <h3 className="text-2xl text-[var(--color-primary-gold)] font-semibold mb-6">
+              {translations?.treeTitle || '추천 트리'}
+            </h3>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-12 h-12 text-[var(--color-primary-gold)] animate-spin" />
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && (!treeData || treeData.children.length === 0) && (
+              <div className="text-center py-12">
+                <Users className="w-16 h-16 text-[var(--color-primary-gold)] mx-auto mb-4 opacity-50" />
+                <p className="text-[var(--color-text-secondary)]">
+                  {language === 'ko' 
+                    ? '아직 초대한 친구가 없습니다. 위의 추천 링크를 공유해보세요!'
+                    : language === 'en'
+                    ? 'No invited friends yet. Share your referral link above!'
+                    : 'まだ招待した友達はいません。上記の紹介リンクを共有してください！'
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Tree Data */}
+            {!isLoading && treeData && treeData.children.length > 0 && (
+              <div className="space-y-4">{renderTreeNode(treeData, true)}</div>
+            )}
+          </motion.div>
+        )}
       </div>
     </section>
   );

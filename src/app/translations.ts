@@ -8,6 +8,62 @@ export interface Translations {
     characters: string;
     registration: string;
     empire: string;
+    login: string;
+    logout: string;
+  };
+  
+  // Login Page
+  login: {
+    title: string;
+    subtitle: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    submitButton: string;
+    sendingButton: string;
+    successTitle: string;
+    successMessage: string;
+    errorTitle: string;
+    backToHome: string;
+    notRegistered: string;
+    registerNow: string;
+  };
+  
+  // Empire Page (로그인 후 메인 페이지)
+  empire: {
+    title: string;
+    welcomeMessage: string;
+    subtitle: string;
+    dashboard: {
+      title: string;
+      stats: {
+        totalInvites: string;
+        directInvites: string;
+        indirectInvites: string;
+        currentTier: string;
+      };
+    };
+    profile: {
+      title: string;
+      email: string;
+      nickname: string;
+      referralCode: string;
+      joinedDate: string;
+      copyCode: string;
+      codeCopied: string;
+    };
+    rewards: {
+      title: string;
+      subtitle: string;
+      noRewards: string;
+      claimButton: string;
+      claimedButton: string;
+    };
+    network: {
+      title: string;
+      subtitle: string;
+      viewTree: string;
+    };
+    goToRegistration: string;
   };
   
   // Hero Section
@@ -171,7 +227,59 @@ export const translations: Record<Language, Translations> = {
       story: '스토리',
       characters: '캐릭터',
       registration: '사전예약',
-      empire: '나의 제국'
+      empire: '나의 제국',
+      login: '로그인',
+      logout: '로그아웃'
+    },
+    login: {
+      title: '제국에 입장하세요',
+      subtitle: '사전등록한 이메일로 매직 링크를 받아 로그인하세요',
+      emailLabel: '이메일',
+      emailPlaceholder: '이메일을 입력하세요',
+      submitButton: '매직 링크 전송',
+      sendingButton: '전송 중...',
+      successTitle: '이메일을 확인하세요!',
+      successMessage: '로그인 링크가 이메일로 전송되었습니다. 이메일을 확인하고 링크를 클릭하여 로그인하세요.',
+      errorTitle: '로그인 실패',
+      backToHome: '홈으로 돌아가기',
+      notRegistered: '아직 사전등록하지 않으셨나요?',
+      registerNow: '지금 사전등록하기'
+    },
+    empire: {
+      title: '나의 제국',
+      welcomeMessage: '환영합니다',
+      subtitle: '당신의 제국을 성장시키고 보상을 획득하세요',
+      dashboard: {
+        title: '대시보드',
+        stats: {
+          totalInvites: '총 초대',
+          directInvites: '직접 초대',
+          indirectInvites: '간접 초대',
+          currentTier: '현재 등급'
+        }
+      },
+      profile: {
+        title: '프로필',
+        email: '이메일',
+        nickname: '닉네임',
+        referralCode: '추천 코드',
+        joinedDate: '가입일',
+        copyCode: '코드 복사',
+        codeCopied: '코드가 복사되었습니다!'
+      },
+      rewards: {
+        title: '보상',
+        subtitle: '초대 수에 따라 보상을 획득하세요',
+        noRewards: '아직 획득 가능한 보상이 없습니다',
+        claimButton: '보상 받기',
+        claimedButton: '받음'
+      },
+      network: {
+        title: '추천 네트워크',
+        subtitle: '당신의 제국을 확인하세요',
+        viewTree: '트리 보기'
+      },
+      goToRegistration: '사전등록 하러 가기'
     },
     hero: {
       title: 'Realm of Shadows',
@@ -364,7 +472,59 @@ export const translations: Record<Language, Translations> = {
       story: 'Story',
       characters: 'Characters',
       registration: 'Pre-Register',
-      empire: 'My Empire'
+      empire: 'My Empire',
+      login: 'Login',
+      logout: 'Logout'
+    },
+    login: {
+      title: 'Enter Your Empire',
+      subtitle: 'Receive a magic link to your registered email to login',
+      emailLabel: 'Email',
+      emailPlaceholder: 'Enter your email',
+      submitButton: 'Send Magic Link',
+      sendingButton: 'Sending...',
+      successTitle: 'Check Your Email!',
+      successMessage: 'A login link has been sent to your email. Please check your email and click the link to login.',
+      errorTitle: 'Login Failed',
+      backToHome: 'Back to Home',
+      notRegistered: 'Haven\'t pre-registered yet?',
+      registerNow: 'Register Now'
+    },
+    empire: {
+      title: 'My Empire',
+      welcomeMessage: 'Welcome',
+      subtitle: 'Grow your empire and earn rewards',
+      dashboard: {
+        title: 'Dashboard',
+        stats: {
+          totalInvites: 'Total Invites',
+          directInvites: 'Direct Invites',
+          indirectInvites: 'Indirect Invites',
+          currentTier: 'Current Tier'
+        }
+      },
+      profile: {
+        title: 'Profile',
+        email: 'Email',
+        nickname: 'Nickname',
+        referralCode: 'Referral Code',
+        joinedDate: 'Joined Date',
+        copyCode: 'Copy Code',
+        codeCopied: 'Code copied!'
+      },
+      rewards: {
+        title: 'Rewards',
+        subtitle: 'Earn rewards based on your invites',
+        noRewards: 'No rewards available yet',
+        claimButton: 'Claim Reward',
+        claimedButton: 'Claimed'
+      },
+      network: {
+        title: 'Referral Network',
+        subtitle: 'View your empire',
+        viewTree: 'View Tree'
+      },
+      goToRegistration: 'Go to Pre-Registration'
     },
     hero: {
       title: 'Realm of Shadows',
@@ -557,7 +717,59 @@ export const translations: Record<Language, Translations> = {
       story: 'ストーリー',
       characters: 'キャラクター',
       registration: '事前登録',
-      empire: '私の帝国'
+      empire: '私の帝国',
+      login: 'ログイン',
+      logout: 'ログアウト'
+    },
+    login: {
+      title: '帝国に入る',
+      subtitle: '登録したメールアドレスにマジックリンクを送信してログイン',
+      emailLabel: 'メール',
+      emailPlaceholder: 'メールアドレスを入力',
+      submitButton: 'マジックリンクを送信',
+      sendingButton: '送信中...',
+      successTitle: 'メールを確認してください！',
+      successMessage: 'ログインリンクがメールに送信されました。メールを確認してリンクをクリックしてログインしてください。',
+      errorTitle: 'ログイン失敗',
+      backToHome: 'ホームに戻る',
+      notRegistered: 'まだ事前登録していませんか？',
+      registerNow: '今すぐ登録'
+    },
+    empire: {
+      title: '私の帝国',
+      welcomeMessage: 'ようこそ',
+      subtitle: '帝国を成長させて報酬を獲得',
+      dashboard: {
+        title: 'ダッシュボード',
+        stats: {
+          totalInvites: '総招待数',
+          directInvites: '直接招待',
+          indirectInvites: '間接招待',
+          currentTier: '現在のティア'
+        }
+      },
+      profile: {
+        title: 'プロフィール',
+        email: 'メール',
+        nickname: 'ニックネーム',
+        referralCode: '紹介コード',
+        joinedDate: '登録日',
+        copyCode: 'コードをコピー',
+        codeCopied: 'コードがコピーされました！'
+      },
+      rewards: {
+        title: '報酬',
+        subtitle: '招待数に応じて報酬を獲得',
+        noRewards: 'まだ獲得可能な報酬はありません',
+        claimButton: '報酬を受け取る',
+        claimedButton: '受け取り済み'
+      },
+      network: {
+        title: '紹介ネットワーク',
+        subtitle: '帝国を確認',
+        viewTree: 'ツリーを表示'
+      },
+      goToRegistration: '事前登録へ移動'
     },
     hero: {
       title: 'Realm of Shadows',

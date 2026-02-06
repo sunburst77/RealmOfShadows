@@ -41,7 +41,7 @@ function StoryChapter({
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex items-center justify-center py-[var(--spacing-3xl)] px-4 md:px-12 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center py-12 sm:py-16 md:py-20 lg:py-[var(--spacing-3xl)] px-4 sm:px-6 md:px-8 lg:px-12 overflow-hidden"
       style={{ backgroundColor: 'var(--color-background-deep-black)' }}
     >
       {/* 2D Animation Background Image (1에서 점점 어두워짐) */}

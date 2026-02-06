@@ -33,7 +33,7 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
 
   return (
     <section 
-      className="relative min-h-screen py-[var(--spacing-3xl)] px-4"
+      className="relative min-h-screen py-12 sm:py-16 md:py-20 lg:py-[var(--spacing-3xl)] px-4 sm:px-6 md:px-8"
       style={{ 
         background: 'linear-gradient(to bottom, var(--color-background-deep-black), var(--color-accent-red)/3, var(--color-background-deep-black))' 
       }}
@@ -44,7 +44,7 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="font-['Cinzel'] text-[var(--text-heading-1)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-md)] text-center"
+          className="font-['Cinzel'] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--color-primary-gold)] mb-4 sm:mb-6 md:mb-[var(--spacing-md)] text-center"
           style={{ letterSpacing: '-1px' }}
         >
           {translations.title}
@@ -55,13 +55,13 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
           viewport={{ once: true }}
-          className="text-center text-[var(--color-text-secondary)] mb-[var(--spacing-2xl)] text-[var(--text-body-large)]"
+          className="text-center text-[var(--color-text-secondary)] mb-8 sm:mb-12 md:mb-16 lg:mb-[var(--spacing-2xl)] text-sm sm:text-base md:text-lg"
         >
           {translations.subtitle}
         </motion.p>
 
         {/* Integrated Hero Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[var(--spacing-lg)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-[var(--spacing-lg)]">
           {translations.episodes.map((episode, index) => {
             const stats = [
               { attack: 5, defense: 4, speed: 3 },

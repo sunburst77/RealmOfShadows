@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, CheckCircle, Sparkles, User, Phone, GamepadIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,10 +6,14 @@ import { CTAButton } from './ui/CTAButton';
 import { FormInput } from './ui/FormInput';
 import { RealTimeCounter } from './ui/RealTimeCounter';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Translations } from '../translations';
+import { Translations, Language } from '../translations';
+import { registrationAPI } from '@/lib/services';
+import { useLoading } from '@/lib/hooks/use-loading';
+import { extractReferralCodeFromURL } from '@/lib/services/security';
 
 interface PreRegistrationSectionProps {
   translations: Translations['registration'];
+  language: Language;
 }
 
 interface FormData {
@@ -19,11 +23,11 @@ interface FormData {
   phone: string;
 }
 
-export function PreRegistrationSection({ translations }: PreRegistrationSectionProps) {
+export function PreRegistrationSection({ translations, language }: PreRegistrationSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
   const [agreedToPolicy, setAgreedToPolicy] = useState(false);
+  const [userReferralCode, setUserReferralCode] = useState<string>('');
   
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -33,89 +37,148 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
   });
   
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const { isLoading, withLoading } = useLoading();
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
+  // 메모리 누수 방지용 ref
+  const isMountedRef = useRef(true);
 
-  const validatePhone = (phone: string) => {
-    const re = /^01[0-9]-?[0-9]{4}-?[0-9]{4}$/;
-    return re.test(phone.replace(/\s/g, ''));
-  };
+  // 컴포넌트 언마운트 감지
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
+  // API 언어 설정
+  useEffect(() => {
+    registrationAPI.setLanguage(language);
+  }, [language]);
+
+  // URL에서 추천 코드 추출 (보안 처리 포함)
+  useEffect(() => {
+    const refCode = extractReferralCodeFromURL();
+    if (refCode) {
+      console.log('✅ 추천 코드 감지:', refCode);
+    }
+  }, []);
+
+  // 실시간 필드 검증
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
+    // 입력 중 에러 클리어
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+
+    // 실시간 검증 (debounce 없이 즉시)
+    if (value.length > 2) {
+      const error = registrationAPI.validateField(field, value);
+      if (error) {
+        setErrors(prev => ({ ...prev, [field]: error }));
+      }
+    }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = '이름을 입력해주세요';
+  // 비동기 중복 체크 (이메일)
+  const handleEmailBlur = async () => {
+    if (!formData.email || errors.email) return;
+
+    try {
+      const isAvailable = await registrationAPI.checkEmailAvailability(formData.email);
+      
+      // 컴포넌트가 언마운트되었으면 setState 하지 않음
+      if (!isMountedRef.current) return;
+      
+      if (!isAvailable) {
+        setErrors(prev => ({ ...prev, email: '이미 등록된 이메일입니다.' }));
+      }
+    } catch (error) {
+      console.error('Email check failed:', error);
     }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = '이메일을 입력해주세요';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = translations.emailError;
-    }
-    
-    if (!formData.nickname.trim()) {
-      newErrors.nickname = '닉네임을 입력해주세요';
-    } else if (formData.nickname.length < 2) {
-      newErrors.nickname = '닉네임은 2자 이상이어야 합니다';
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = '전화번호를 입력해주세요';
-    } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = '올바른 전화번호 형식을 입력해주세요 (예: 010-1234-5678)';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
+  // 비동기 중복 체크 (닉네임)
+  const handleNicknameBlur = async () => {
+    if (!formData.nickname || errors.nickname) return;
+
+    try {
+      const isAvailable = await registrationAPI.checkNicknameAvailability(formData.nickname);
+      
+      // 컴포넌트가 언마운트되었으면 setState 하지 않음
+      if (!isMountedRef.current) return;
+      
+      if (!isAvailable) {
+        setErrors(prev => ({ ...prev, nickname: '이미 사용 중인 닉네임입니다.' }));
+      }
+    } catch (error) {
+      console.error('Nickname check failed:', error);
+    }
+  };
+
+  // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
 
+    // 개인정보 동의 체크
     if (!agreedToPolicy) {
       toast.error(translations.policyAgreementError);
       return;
     }
 
-    setIsValidating(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    
-    setIsValidating(false);
+    // 사전등록 실행 (모든 검증 자동 처리)
+    const result = await withLoading(
+      () => registrationAPI.register({
+        name: formData.name,
+        email: formData.email,
+        nickname: formData.nickname,
+        phone: formData.phone,
+        agreeToPolicy: agreedToPolicy,
+      }),
+      translations.modal.processingText
+    );
+
+    // 컴포넌트가 언마운트되었으면 setState 하지 않음
+    if (!isMountedRef.current) return;
+
+    if (!result.success) {
+      // 에러 처리
+      const errorMessage = result.error?.userMessage || translations.errorMessage;
+      toast.error(errorMessage);
+
+      // 필드별 에러 표시
+      if (result.error?.code === 'EMAIL_ALREADY_EXISTS') {
+        setErrors({ ...errors, email: errorMessage });
+      } else if (result.error?.code === 'NICKNAME_ALREADY_EXISTS') {
+        setErrors({ ...errors, nickname: errorMessage });
+      }
+
+      return;
+    }
+
+    // 성공 처리
+    console.log('✅ 사전등록 성공:', {
+      userId: result.user?.id,
+      referralCode: result.referralCode,
+    });
+
+    setUserReferralCode(result.referralCode || '');
     setIsSubmitted(true);
     setIsModalOpen(false);
-    
+
     toast.success(translations.registrationSuccess, {
-      description: translations.confirmationEmailSent
+      description: translations.confirmationEmailSent,
     });
   };
 
   return (
     <section 
-      className="relative min-h-screen flex items-center justify-center py-[var(--spacing-3xl)] px-4"
+      className="relative min-h-screen flex items-center justify-center py-12 sm:py-16 md:py-20 lg:py-[var(--spacing-3xl)] px-4 sm:px-6 md:px-8"
       style={{ 
         background: `linear-gradient(to bottom, var(--color-background-deep-black), var(--color-accent-red)/5, var(--color-background-deep-black))` 
       }}
     >
-      {/* SectionBackdrop - Background Pattern */}
+      {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div 
           className="absolute inset-0"
@@ -125,8 +188,8 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
         />
       </div>
 
-      <div className="relative z-10 max-w-2xl w-full mx-auto">
-        {/* RealTimeCounter - Featured */}
+      <div className="relative z-10 max-w-full sm:max-w-xl md:max-w-2xl w-full mx-auto">
+        {/* Real-Time Counter */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -134,7 +197,12 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
           viewport={{ once: true }}
           className="flex justify-center mb-[var(--spacing-xl)]"
         >
-          <RealTimeCounter size="featured" label={translations.counterLabel} showTrend />
+          <RealTimeCounter 
+            size="featured" 
+            label={translations.counterLabel} 
+            showTrend 
+            language={language}
+          />
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -147,7 +215,7 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
               transition={{ duration: 0.5 }}
             >
               <h2 
-                className="font-['Cinzel'] text-[var(--text-heading-1)] font-bold text-center mb-[var(--spacing-lg)]"
+                className="font-['Cinzel'] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 sm:mb-6 md:mb-[var(--spacing-lg)]"
                 style={{ 
                   color: 'var(--color-primary-gold)',
                   letterSpacing: '-1px'
@@ -155,11 +223,11 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
               >
                 {translations.title}
               </h2>
-              <p className="text-center text-[var(--color-text-primary)] mb-[var(--spacing-xl)] text-[var(--text-body-large)]">
+              <p className="text-center text-[var(--color-text-primary)] mb-6 sm:mb-8 md:mb-[var(--spacing-xl)] text-sm sm:text-base md:text-lg">
                 {translations.subtitle}
               </p>
 
-              {/* 혜택 안내 */}
+              {/* Benefits Card */}
               <div 
                 className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-lg)] mb-[var(--spacing-xl)]"
                 style={{ boxShadow: 'var(--shadow-card)' }}
@@ -178,13 +246,14 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                 </ul>
               </div>
 
-              {/* 사전예약 모달 버튼 */}
+              {/* Pre-Registration Modal */}
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                   <CTAButton
                     type="primary"
                     size="large"
                     className="w-full"
+                    disabled={isLoading}
                   >
                     {translations.openModalButton}
                   </CTAButton>
@@ -199,9 +268,9 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                     </DialogDescription>
                   </DialogHeader>
 
-                  {/* 모달 내부 폼 */}
+                  {/* Form */}
                   <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    {/* 이름 */}
+                    {/* Name */}
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
                       <FormInput
@@ -213,10 +282,11 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                         error={errors.name}
                         className="pl-11"
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
-                    {/* 이메일 */}
+                    {/* Email */}
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
                       <FormInput
@@ -225,13 +295,15 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                         placeholder={translations.form.emailPlaceholder}
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
+                        onBlur={handleEmailBlur}
                         error={errors.email}
                         className="pl-11"
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
-                    {/* 닉네임 */}
+                    {/* Nickname */}
                     <div className="relative">
                       <GamepadIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
                       <FormInput
@@ -240,13 +312,15 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                         placeholder={translations.form.nicknamePlaceholder}
                         value={formData.nickname}
                         onChange={(e) => handleInputChange('nickname', e.target.value)}
+                        onBlur={handleNicknameBlur}
                         error={errors.nickname}
                         className="pl-11"
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
-                    {/* 전화번호 */}
+                    {/* Phone */}
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-primary-gold)] z-10" />
                       <FormInput
@@ -258,10 +332,11 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                         error={errors.phone}
                         className="pl-11"
                         required
+                        disabled={isLoading}
                       />
                     </div>
 
-                    {/* 개인정보 동의 */}
+                    {/* Privacy Policy Agreement */}
                     <div className="flex items-start gap-3 pt-2">
                       <input
                         type="checkbox"
@@ -269,6 +344,7 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                         checked={agreedToPolicy}
                         onChange={(e) => setAgreedToPolicy(e.target.checked)}
                         className="mt-1 w-5 h-5 rounded border-2 border-[var(--color-border-gold)] bg-[var(--color-background-panel)] checked:bg-[var(--color-primary-gold)] focus:ring-2 focus:ring-[var(--color-glow-gold)] transition-all cursor-pointer"
+                        disabled={isLoading}
                       />
                       <label 
                         htmlFor="privacy-consent-modal" 
@@ -286,15 +362,15 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                       </label>
                     </div>
 
-                    {/* 제출 버튼 */}
+                    {/* Submit Button */}
                     <CTAButton
                       type="primary"
                       size="large"
-                      loading={isValidating}
-                      disabled={!agreedToPolicy}
+                      loading={isLoading}
+                      disabled={!agreedToPolicy || isLoading}
                       className="w-full mt-6"
                     >
-                      {isValidating ? translations.modal.processingText : translations.form.submitButton}
+                      {isLoading ? translations.modal.processingText : translations.form.submitButton}
                     </CTAButton>
                   </form>
                 </DialogContent>
@@ -313,7 +389,7 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
               transition={{ duration: 0.5 }}
               className="text-center"
             >
-              {/* CompletionHero */}
+              {/* Success Icon */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -326,13 +402,44 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                 className="font-['Cinzel'] text-[var(--text-heading-2)] font-bold text-[var(--color-primary-gold)] mb-[var(--spacing-md)]"
                 style={{ letterSpacing: '-0.5px' }}
               >
-                사전예약 완료!
+                {translations.successMessage}
               </h3>
               <p className="text-[var(--color-text-primary)] mb-[var(--spacing-xl)] text-[var(--text-body-large)]">
-                환영합니다, 용사여. 당신의 여정이 시작되었습니다.
+                {language === 'ko' 
+                  ? '환영합니다, 용사여. 당신의 여정이 시작되었습니다.'
+                  : language === 'en'
+                  ? 'Welcome, warrior. Your journey has begun.'
+                  : 'ようこそ、戦士よ。あなたの旅が始まりました。'
+                }
               </p>
 
-              {/* EpisodeUnlockCelebration */}
+              {/* Referral Code Display */}
+              {userReferralCode && (
+                <div 
+                  className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-lg)] mb-[var(--spacing-xl)]"
+                  style={{ boxShadow: 'var(--shadow-card)' }}
+                >
+                  <div className="flex items-center justify-center mb-[var(--spacing-md)]">
+                    <Sparkles className="w-6 h-6 text-[var(--color-primary-gold)] mr-2" />
+                    <h4 className="text-xl text-[var(--color-primary-gold)] font-semibold">
+                      {language === 'ko' ? '나의 추천 코드' : language === 'en' ? 'My Referral Code' : '私の紹介コード'}
+                    </h4>
+                  </div>
+                  <p className="text-3xl font-mono font-bold text-[var(--color-primary-gold)] tracking-wider">
+                    {userReferralCode}
+                  </p>
+                  <p className="text-[var(--color-text-secondary)] mt-2 text-sm">
+                    {language === 'ko' 
+                      ? '친구를 초대하고 함께 보상을 받으세요!'
+                      : language === 'en'
+                      ? 'Invite friends and earn rewards together!'
+                      : '友達を招待して一緒に報酬を獲得しましょう！'
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Episode Unlock */}
               <div 
                 className="bg-[var(--color-background-panel)] border-2 border-[var(--color-border-gold)]/30 rounded-lg p-[var(--spacing-lg)] mb-[var(--spacing-xl)]"
                 style={{ boxShadow: 'var(--shadow-card)' }}
@@ -340,11 +447,21 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                 <div className="flex items-center justify-center mb-[var(--spacing-md)]">
                   <Sparkles className="w-6 h-6 text-[var(--color-primary-gold)] mr-2" />
                   <h4 className="text-xl text-[var(--color-primary-gold)] font-semibold">
-                    첫 번째 에피소드 잠금 해제!
+                    {language === 'ko' 
+                      ? '첫 번째 에피소드 잠금 해제!'
+                      : language === 'en'
+                      ? 'First Episode Unlocked!'
+                      : '最初のエピソードがアンロックされました！'
+                    }
                   </h4>
                 </div>
                 <p className="text-[var(--color-text-secondary)]">
-                  "어둠의 기사" 캐릭터 에피소드를 확인하세요
+                  {language === 'ko' 
+                    ? '"어둠의 기사" 캐릭터 에피소드를 확인하세요'
+                    : language === 'en'
+                    ? 'Check out the "Dark Knight" character episode'
+                    : '「闇の騎士」キャラクターエピソードを確認してください'
+                  }
                 </p>
               </div>
 
@@ -356,7 +473,7 @@ export function PreRegistrationSection({ translations }: PreRegistrationSectionP
                   element?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                에피소드 보기
+                {language === 'ko' ? '에피소드 보기' : language === 'en' ? 'View Episode' : 'エピソードを見る'}
               </CTAButton>
             </motion.div>
           )}

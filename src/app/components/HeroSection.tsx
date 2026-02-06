@@ -140,7 +140,7 @@ export function HeroSection({ translations }: HeroSectionProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-background-deep-black)]/50 via-transparent to-[var(--color-background-deep-black)] z-[calc(var(--z-background)+1)]" />
 
       {/* ParallaxLayerForeground - Content */}
-      <div className="relative h-full flex flex-col items-center justify-center px-4 z-[var(--z-content)] gap-[var(--spacing-lg)]">
+      <div className="relative h-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12 z-[var(--z-content)] gap-[var(--spacing-lg)]">
         {/* RealTimeCounter - Compact */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -159,9 +159,8 @@ export function HeroSection({ translations }: HeroSectionProps) {
           className="text-center flex flex-col items-center w-full"
         >
           <h1 
-            className="font-['Cinzel'] font-bold mb-[var(--spacing-lg)]"
+            className="font-['Cinzel'] font-bold mb-[var(--spacing-lg)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             style={{
-              fontSize: 'calc(var(--text-display-title) * 1.2)',
               background: 'linear-gradient(180deg, var(--color-primary-gold) 0%, var(--color-primary-gold-dark) 40%, var(--color-accent-red) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -174,7 +173,7 @@ export function HeroSection({ translations }: HeroSectionProps) {
             Realm of Shadows
           </h1>
           <p 
-            className="text-sm md:text-xl text-[var(--color-accent-red)] mb-[var(--spacing-lg)] font-semibold tracking-tight"
+            className="text-sm sm:text-base md:text-xl lg:text-2xl text-[var(--color-accent-red)] mb-[var(--spacing-lg)] font-semibold tracking-tight px-4"
             style={{ fontFamily: "'Cormorant Garamond', serif" }}
           >
             {translations.subtitle.split('|').map((line, index, array) => (

@@ -27,24 +27,24 @@ export function FooterSection({ translations, currentLanguage, onLanguageChange 
 
   return (
     <footer 
-      className="relative border-t py-[var(--spacing-2xl)] px-4"
+      className="relative border-t py-8 sm:py-12 md:py-16 lg:py-[var(--spacing-2xl)] px-4 sm:px-6 md:px-8"
       style={{ 
         backgroundColor: 'var(--color-background-deep-black)',
         borderColor: 'rgba(212, 175, 55, 0.1)'
       }}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--spacing-xl)] mb-[var(--spacing-xl)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-[var(--spacing-xl)] mb-8 md:mb-[var(--spacing-xl)]">
           {/* Brand */}
           <div>
             <h3 
-              className="font-['Cinzel'] text-2xl text-[var(--color-primary-gold)] mb-[var(--spacing-md)]"
+              className="font-['Cinzel'] text-xl sm:text-2xl text-[var(--color-primary-gold)] mb-3 sm:mb-[var(--spacing-md)]"
               style={{ textShadow: '0 0 20px var(--color-glow-gold)' }}
             >
               Realm of Shadows
             </h3>
             <p 
-              className="text-sm leading-relaxed"
+              className="text-xs sm:text-sm leading-relaxed"
               style={{ 
                 color: 'var(--color-text-secondary)',
                 fontFamily: "'Cormorant Garamond', serif"

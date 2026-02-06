@@ -1,17 +1,22 @@
 import { useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { NavigationOverlay } from './components/NavigationOverlay';
-import { HeroSection } from './components/HeroSection';
-import { StoryUnfoldSection } from './components/StoryUnfoldSection';
-import { CharactersSection } from './components/CharactersSection';
-import { PreRegistrationSection } from './components/PreRegistrationSection';
-import { ReferralTreeSection } from './components/ReferralTreeSection';
 import { FooterSection } from './components/FooterSection';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { EmpirePage } from './pages/EmpirePage';
 import { Language, translations } from './translations';
 
-export default function App() {
+function AppContent() {
   const [language, setLanguage] = useState<Language>('ko');
   const t = translations[language];
+  const location = useLocation();
+
+  // 로그인 페이지에서는 네비게이션과 푸터 숨김
+  const isLoginPage = location.pathname === '/login';
+  const isEmpirePage = location.pathname === '/empire';
 
   return (
     <div 
@@ -21,45 +26,52 @@ export default function App() {
         color: 'var(--color-text-primary)'
       }}
     >
-      <NavigationOverlay 
-        translations={t.nav} 
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      {/* 네비게이션 (로그인 페이지 제외) */}
+      {!isLoginPage && (
+        <NavigationOverlay 
+          translations={t.nav} 
+          currentLanguage={language}
+          onLanguageChange={setLanguage}
+        />
+      )}
       
-      <main>
-        {/* HeroSection - Full viewport cinematic intro */}
-        <div id="hero">
-          <HeroSection translations={t.hero} />
-        </div>
+      {/* 라우트 */}
+      <Routes>
+        {/* 홈 페이지 (랜딩 페이지) */}
+        <Route 
+          path="/" 
+          element={<HomePage translations={t} language={language} />} 
+        />
         
-        {/* StoryUnfoldSection - Scrolling story chapters */}
-        <div id="story">
-          <StoryUnfoldSection translations={t.story} />
-        </div>
+        {/* 로그인 페이지 */}
+        <Route 
+          path="/login" 
+          element={<LoginPage translations={t.login} />} 
+        />
         
-        {/* CharactersSection - Episode cards grid */}
-        <div id="characters">
-          <CharactersSection translations={t.characters} />
-        </div>
-        
-        {/* PreRegistrationSection - Main CTA with form */}
-        <div id="registration">
-          <PreRegistrationSection translations={t.registration} />
-        </div>
-        
-        {/* ReferralTreeSection - Friend invitation tree */}
-        <div id="empire">
-          <ReferralTreeSection translations={t.referral} />
-        </div>
-      </main>
+        {/* Empire 페이지 (보호된 라우트) */}
+        <Route 
+          path="/empire" 
+          element={
+            <ProtectedRoute>
+              <EmpirePage 
+                translations={t.empire} 
+                referralTranslations={t.referral}
+                language={language} 
+              />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
 
-      {/* FooterSection */}
-      <FooterSection 
-        translations={t.footer} 
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      {/* 푸터 (로그인 페이지와 Empire 페이지 제외) */}
+      {!isLoginPage && !isEmpirePage && (
+        <FooterSection 
+          translations={t.footer} 
+          currentLanguage={language}
+          onLanguageChange={setLanguage}
+        />
+      )}
       
       {/* Toast Notifications */}
       <Toaster 
@@ -74,5 +86,13 @@ export default function App() {
         }}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
