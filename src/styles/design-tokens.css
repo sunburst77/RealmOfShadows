@@ -1,0 +1,106 @@
+/* Design Tokens for Realm of Shadows */
+
+:root {
+  /* Color Palette */
+  --color-primary-gold: #D4AF37;
+  --color-primary-gold-light: #F0D060;
+  --color-primary-gold-dark: #A08520;
+  --color-accent-red: #C0392B;
+  --color-accent-red-dark: #922B21;
+  --color-background-deep-black: #0A0A0F;
+  --color-background-dark: #14141C;
+  --color-background-panel: #1E1E2A;
+  --color-text-primary: #F5F0E8;
+  --color-text-secondary: #9E9A90;
+  --color-text-muted: #5C5A54;
+  --color-border-default: #2E2E3A;
+  --color-border-gold: #D4AF37;
+  --color-border-error: #C0392B;
+  --color-glow-gold: #D4AF3766;
+  --color-overlay-dark: #000000CC;
+  --color-tier-bronze: #CD7F32;
+  --color-tier-silver: #C0C0C0;
+  --color-tier-gold: #D4AF37;
+
+  /* Typography Sizes */
+  --text-display-title: 72px;
+  --text-heading-1: 48px;
+  --text-heading-2: 36px;
+  --text-heading-3: 24px;
+  --text-body-large: 18px;
+  --text-body: 16px;
+  --text-body-small: 14px;
+  --text-caption: 12px;
+  --text-button-large: 18px;
+  --text-button-medium: 16px;
+  --text-button-small: 14px;
+  --text-counter-number: 40px;
+  --text-episode-title: 20px;
+  --text-tree-node-label: 13px;
+
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.4;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.7;
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-glow-gold: 0 0 30px var(--color-glow-gold);
+  --shadow-glow-gold-intense: 0 0 50px var(--color-primary-gold-light);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+
+  /* Z-Index Layers */
+  --z-background: 0;
+  --z-content: 10;
+  --z-overlay: 20;
+  --z-modal: 30;
+  --z-navigation: 40;
+  --z-tooltip: 50;
+}
+
+/* Responsive Typography */
+@media (max-width: 767px) {
+  :root {
+    --text-display-title: 48px;
+    --text-heading-1: 36px;
+    --text-heading-2: 28px;
+    --text-heading-3: 20px;
+    --text-counter-number: 32px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --text-display-title: 60px;
+    --text-heading-1: 42px;
+    --text-heading-2: 32px;
+  }
+}

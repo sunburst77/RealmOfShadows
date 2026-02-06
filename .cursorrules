@@ -1,0 +1,688 @@
+# Realm of Shadows - Pre-registration Landing Page
+# Cursor AI Rules & Guidelines
+
+## 프로젝트 개요
+- **프로젝트**: 다크 판타지 게임 사전예약 랜딩 페이지
+- **스택**: React 18.3.1 + TypeScript + Vite 6.4.1 + Tailwind CSS 3.4.18
+- **UI 라이브러리**: Radix UI + Material-UI + Lucide Icons
+- **애니메이션**: Framer Motion (motion)
+- **다국어**: 한국어(ko), 영어(en), 일본어(ja)
+
+---
+
+## 1. 아키텍처 패턴
+
+### 1.1 컴포넌트 아키텍처
+```
+✅ 함수형 컴포넌트 (Function Components)
+✅ Props 인터페이스 명시적 타입 정의
+✅ 컴포넌트 분리 원칙 (Container/Presentational)
+✅ Composition over Inheritance
+❌ 클래스 컴포넌트 사용 금지
+```
+
+**예시**:
+```typescript
+interface HeroSectionProps {
+  translations: Translations['hero'];
+}
+
+export function HeroSection({ translations }: HeroSectionProps) {
+  // 컴포넌트 로직
+}
+```
+
+### 1.2 상태 관리
+```
+✅ React Hooks (useState, useEffect, useCallback, useMemo)
+✅ Props Drilling 최소화
+✅ 전역 상태는 Context API 또는 상위 컴포넌트에서 관리
+❌ Redux, Zustand 등 외부 상태 관리 라이브러리 추가 금지
+```
+
+### 1.3 폼 관리
+```
+✅ React Hook Form 사용
+✅ Controlled Components
+✅ 유효성 검사 로직 분리
+```
+
+### 1.4 스타일링 전략
+```
+✅ Tailwind CSS 유틸리티 클래스 우선
+✅ CSS 변수 사용 (var(--color-primary-gold) 등)
+✅ 반응형 디자인 (mobile-first)
+✅ 다크 테마 전용 색상 시스템
+❌ 인라인 스타일 최소화 (CSS 변수 제외)
+❌ styled-components, CSS Modules 사용 금지
+```
+
+### 1.5 애니메이션
+```
+✅ Framer Motion (motion) 사용
+✅ 성능 최적화를 위한 transform, opacity 속성 활용
+✅ 접근성을 고려한 애니메이션 (prefers-reduced-motion)
+```
+
+---
+
+## 2. 네이밍 컨벤션
+
+### 2.1 파일명
+```
+✅ 컴포넌트: PascalCase (HeroSection.tsx, NavigationOverlay.tsx)
+✅ 유틸리티: camelCase (utils.ts, use-mobile.ts)
+✅ UI 기본 컴포넌트: kebab-case (button.tsx, dialog.tsx)
+✅ 스타일: kebab-case (design-tokens.css, fonts.css)
+✅ 설정 파일: kebab-case (vite.config.ts, tailwind.config.js)
+```
+
+### 2.2 컴포넌트명
+```
+✅ PascalCase: HeroSection, PreRegistrationSection, CTAButton
+✅ 의미있는 이름: RealTimeCounter (O), Counter (X)
+✅ 섹션 컴포넌트: {Name}Section 형식
+```
+
+### 2.3 변수 & 함수
+```typescript
+✅ camelCase
+// 변수
+const preRegistrationCount = 1234;
+const isLoading = false;
+
+// 함수
+function scrollToRegistration() {}
+function handleSubmit(data: FormData) {}
+
+// 이벤트 핸들러
+const handleClick = () => {};
+const onLanguageChange = (lang: Language) => {};
+
+// Boolean
+const isVisible = true;
+const hasError = false;
+const shouldRender = true;
+```
+
+### 2.4 타입 & 인터페이스
+```typescript
+✅ PascalCase
+// Interface
+interface HeroSectionProps {}
+interface Translations {}
+
+// Type
+type Language = 'ko' | 'en' | 'ja';
+type ButtonVariant = 'primary' | 'secondary';
+
+// Enum (사용 시)
+enum Status {
+  Pending = 'PENDING',
+  Success = 'SUCCESS',
+  Error = 'ERROR',
+}
+```
+
+### 2.5 CSS 클래스 & 변수
+```css
+/* CSS 변수: kebab-case */
+--color-primary-gold: #D4AF37;
+--text-display-title: 72px;
+--spacing-xl: 32px;
+
+/* Tailwind 클래스: 표준 사용 */
+className="flex items-center justify-center bg-primary text-white"
+```
+
+### 2.6 디렉토리명
+```
+✅ kebab-case 또는 camelCase
+src/app/
+src/app/components/
+src/app/components/ui/
+src/styles/
+```
+
+---
+
+## 3. 보안 원칙
+
+### 3.1 입력 검증
+```typescript
+✅ 모든 사용자 입력 검증 (이메일, 닉네임 등)
+✅ React Hook Form의 validation 사용
+✅ 클라이언트 + 서버 이중 검증 (서버 구현 시)
+
+// 예시
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+{
+  required: '이메일을 입력해주세요',
+  pattern: {
+    value: emailRegex,
+    message: '유효한 이메일 주소를 입력해주세요'
+  }
+}
+```
+
+### 3.2 XSS 방지
+```typescript
+✅ React의 자동 이스케이핑 활용
+❌ dangerouslySetInnerHTML 사용 금지 (특별한 경우 제외)
+✅ 사용자 입력을 직접 DOM에 삽입하지 않음
+```
+
+### 3.3 환경 변수
+```typescript
+✅ 민감 정보는 환경 변수로 관리
+✅ .env 파일은 .gitignore에 포함
+❌ API 키, 비밀번호 하드코딩 금지
+```
+
+### 3.4 의존성 보안
+```bash
+✅ 정기적인 npm audit 실행
+✅ 취약점 발견 시 즉시 업데이트
+✅ 신뢰할 수 있는 패키지만 사용
+```
+
+### 3.5 데이터 처리
+```typescript
+✅ 개인정보 최소 수집 원칙
+✅ HTTPS 통신 (프로덕션)
+✅ 사용자 동의 없이 데이터 전송 금지
+```
+
+---
+
+## 4. 절대 금지사항
+
+### 4.1 코드 품질
+```
+❌ any 타입 사용 (부득이한 경우 unknown 사용 후 타입 가드)
+❌ console.log 프로덕션 코드에 포함
+❌ 미사용 import 방치
+❌ 하드코딩된 매직 넘버 (상수로 추출)
+❌ 중복 코드 (DRY 원칙 위반)
+```
+
+### 4.2 성능
+```
+❌ useEffect 내 무한 루프
+❌ 불필요한 리렌더링 (React.memo, useMemo, useCallback 활용)
+❌ 대용량 이미지 최적화 없이 사용
+❌ 번들 크기 무시하고 라이브러리 추가
+```
+
+### 4.3 의존성
+```
+❌ Tailwind CSS v4로 업그레이드 (현재 v3.4.18 유지)
+❌ React 19로 업그레이드 (현재 18.3.1 유지)
+❌ package.json 임의 수정
+❌ peer dependencies 충돌 무시
+```
+
+### 4.4 스타일
+```
+❌ !important 남용
+❌ 인라인 스타일 과도한 사용
+❌ Tailwind 클래스 순서 무시 (가독성 저하)
+❌ CSS 변수 없이 색상 하드코딩
+```
+
+### 4.5 보안
+```
+❌ 사용자 입력 검증 생략
+❌ CORS 설정 무시
+❌ 민감 정보 로그 출력
+❌ eval() 사용
+```
+
+### 4.6 Git
+```
+❌ node_modules/ 커밋
+❌ .env 파일 커밋
+❌ 의미 없는 커밋 메시지
+❌ 대용량 바이너리 파일 커밋
+```
+
+---
+
+## 5. 디렉토리 구조
+
+### 5.1 현재 구조
+```
+프로젝트 루트/
+├── src/
+│   ├── main.tsx                    # 앱 진입점
+│   ├── app/
+│   │   ├── App.tsx                # 메인 앱 컴포넌트
+│   │   ├── translations.ts         # 다국어 번역 (타입 + 데이터)
+│   │   └── components/
+│   │       ├── NavigationOverlay.tsx     # 네비게이션 바
+│   │       ├── HeroSection.tsx           # 히어로 섹션
+│   │       ├── StoryUnfoldSection.tsx    # 스토리 섹션
+│   │       ├── CharactersSection.tsx     # 캐릭터 섹션
+│   │       ├── PreRegistrationSection.tsx # 사전예약 폼
+│   │       ├── ReferralTreeSection.tsx   # 추천인 트리
+│   │       ├── FooterSection.tsx         # 푸터
+│   │       ├── figma/
+│   │       │   └── ImageWithFallback.tsx # Figma 이미지 처리
+│   │       └── ui/                       # 재사용 UI 컴포넌트
+│   │           ├── button.tsx            # Radix UI 기반
+│   │           ├── dialog.tsx
+│   │           ├── form.tsx
+│   │           ├── CTAButton.tsx         # 커스텀 CTA 버튼
+│   │           ├── EpisodeCard.tsx       # 에피소드 카드
+│   │           ├── FormInput.tsx         # 폼 인풋
+│   │           ├── LanguageSwitcher.tsx  # 언어 선택
+│   │           ├── RealTimeCounter.tsx   # 실시간 카운터
+│   │           ├── TreeNodeCard.tsx      # 트리 노드 카드
+│   │           ├── use-mobile.ts         # 모바일 감지 훅
+│   │           └── utils.ts              # 유틸리티
+│   │
+│   └── styles/
+│       ├── index.css              # 메인 스타일 (모든 CSS import)
+│       ├── design-tokens.css      # 디자인 토큰 (색상, 크기 등)
+│       ├── fonts.css              # 폰트 정의
+│       ├── tailwind.css           # Tailwind 지시어
+│       └── theme.css              # 테마 변수
+│
+├── guidelines/
+│   └── Guidelines.md              # 프로젝트 가이드라인
+│
+├── index.html                     # HTML 템플릿
+├── package.json                   # 의존성 관리
+├── tailwind.config.js             # Tailwind v3 설정
+├── postcss.config.mjs             # PostCSS 설정
+├── vite.config.ts                 # Vite 설정
+└── README.md                      # 프로젝트 문서
+```
+
+### 5.2 파일 배치 규칙
+
+#### 새 컴포넌트 생성 시
+```
+✅ 섹션 컴포넌트: src/app/components/{Name}Section.tsx
+✅ 재사용 UI: src/app/components/ui/{name}.tsx
+✅ 페이지별 컴포넌트: 해당 섹션 내부 또는 별도 폴더
+```
+
+#### 스타일 파일
+```
+✅ 글로벌 스타일: src/styles/
+✅ 컴포넌트 스타일: Tailwind 클래스 사용
+❌ 컴포넌트별 CSS 파일 생성 금지
+```
+
+#### 유틸리티 & 헬퍼
+```
+✅ 공통 유틸: src/app/components/ui/utils.ts
+✅ 커스텀 훅: src/app/components/ui/use-{name}.ts
+✅ 타입 정의: 각 파일 내부 또는 별도 types/ 폴더
+```
+
+#### 에셋 파일
+```
+✅ 이미지: public/images/ (생성 필요 시)
+✅ 폰트: Google Fonts CDN 사용 (src/styles/fonts.css)
+✅ 아이콘: Lucide React 패키지 사용
+```
+
+### 5.3 Import 순서
+```typescript
+// 1. React 관련
+import { useState, useEffect } from 'react';
+
+// 2. 외부 라이브러리
+import { motion } from 'motion/react';
+import { ChevronDown } from 'lucide-react';
+
+// 3. 내부 컴포넌트
+import { CTAButton } from './ui/CTAButton';
+import { RealTimeCounter } from './ui/RealTimeCounter';
+
+// 4. 타입 & 유틸리티
+import { Translations, Language } from '../translations';
+import { cn } from './ui/utils';
+
+// 5. 스타일 (필요 시)
+import './custom-styles.css';
+```
+
+---
+
+## 6. 코딩 스타일 가이드
+
+### 6.1 TypeScript
+```typescript
+✅ 명시적 타입 정의
+✅ 제네릭 활용
+✅ 유니온 타입으로 상태 표현
+✅ 옵셔널 체이닝 (?.) 활용
+✅ Nullish coalescing (??) 활용
+
+// Good
+interface Props {
+  title: string;
+  count?: number;
+  onSubmit: (data: FormData) => void;
+}
+
+// Bad
+interface Props {
+  title: any;
+  count: number | undefined;
+  onSubmit: Function;
+}
+```
+
+### 6.2 React 컴포넌트
+```typescript
+// ✅ Good: 함수형 + 명시적 타입
+export function HeroSection({ translations }: HeroSectionProps) {
+  const [count, setCount] = useState<number>(0);
+  
+  return (
+    <section className="hero">
+      {/* JSX */}
+    </section>
+  );
+}
+
+// ❌ Bad: 암묵적 타입
+export function HeroSection(props) {
+  return <section>{/* JSX */}</section>;
+}
+```
+
+### 6.3 Tailwind CSS
+```typescript
+// ✅ Good: 읽기 쉬운 순서
+className="
+  flex items-center justify-center gap-4
+  w-full max-w-4xl mx-auto px-4
+  bg-primary text-white
+  rounded-lg shadow-lg
+  hover:bg-primary-dark
+  transition-all duration-300
+"
+
+// ❌ Bad: 무질서
+className="bg-primary rounded-lg flex w-full items-center px-4 hover:bg-primary-dark transition-all text-white"
+```
+
+### 6.4 주석
+```typescript
+// ✅ Good: 의도와 이유 설명
+// 사전예약 카운터를 1초마다 증가시켜 실시간 느낌을 제공
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCount(prev => prev + 1);
+  }, 1000);
+  
+  return () => clearInterval(interval);
+}, []);
+
+// ❌ Bad: 불필요하거나 설명이 아닌 주석
+// count를 1 증가
+setCount(count + 1);
+```
+
+---
+
+## 7. 다국어 지원
+
+### 7.1 번역 추가
+```typescript
+// src/app/translations.ts
+export const translations: Record<Language, Translations> = {
+  ko: {
+    nav: {
+      hero: '홈',
+      story: '스토리',
+      // ...
+    },
+  },
+  en: {
+    nav: {
+      hero: 'Home',
+      story: 'Story',
+      // ...
+    },
+  },
+  ja: {
+    nav: {
+      hero: 'ホーム',
+      story: 'ストーリー',
+      // ...
+    },
+  },
+};
+```
+
+### 7.2 번역 사용
+```typescript
+// ✅ Good: 타입 안전한 번역
+interface Props {
+  translations: Translations['hero'];
+}
+
+export function HeroSection({ translations }: Props) {
+  return <h1>{translations.title}</h1>;
+}
+
+// ❌ Bad: 하드코딩
+export function HeroSection() {
+  return <h1>Realm of Shadows</h1>;
+}
+```
+
+---
+
+## 8. 성능 최적화
+
+### 8.1 React 최적화
+```typescript
+✅ React.memo() for pure components
+✅ useMemo() for expensive calculations
+✅ useCallback() for event handlers
+✅ Lazy loading for heavy components
+
+// 예시
+const MemoizedCard = React.memo(EpisodeCard);
+
+const sortedEpisodes = useMemo(() => {
+  return episodes.sort((a, b) => a.order - b.order);
+}, [episodes]);
+
+const handleClick = useCallback(() => {
+  // handler logic
+}, [dependency]);
+```
+
+### 8.2 이미지 최적화
+```typescript
+✅ WebP 포맷 사용
+✅ 반응형 이미지 (srcset)
+✅ Lazy loading (loading="lazy")
+✅ 적절한 크기 리사이징
+```
+
+### 8.3 번들 최적화
+```typescript
+✅ Tree shaking 활용
+✅ Code splitting (dynamic import)
+✅ 불필요한 의존성 제거
+```
+
+---
+
+## 9. 접근성 (a11y)
+
+```typescript
+✅ 시맨틱 HTML 사용 (section, nav, main, footer)
+✅ ARIA 속성 추가 (aria-label, aria-describedby)
+✅ 키보드 네비게이션 지원
+✅ 포커스 관리
+✅ 색상 대비 준수 (WCAG AA)
+✅ 스크린 리더 호환
+
+// 예시
+<button
+  onClick={handleSubmit}
+  aria-label="사전예약 신청하기"
+  className="cta-button"
+>
+  {translations.cta}
+</button>
+```
+
+---
+
+## 10. 테스트 (추가 시)
+
+```typescript
+✅ 컴포넌트 단위 테스트
+✅ 통합 테스트
+✅ E2E 테스트 (중요 플로우)
+✅ 접근성 테스트
+
+// 추천 라이브러리 (필요 시)
+- Vitest (단위/통합)
+- React Testing Library
+- Playwright (E2E)
+```
+
+---
+
+## 11. Git 워크플로우
+
+### 11.1 브랜치 전략
+```
+main - 프로덕션
+develop - 개발
+feature/* - 기능 개발
+bugfix/* - 버그 수정
+hotfix/* - 긴급 수정
+```
+
+### 11.2 커밋 메시지
+```bash
+# 형식
+type(scope): subject
+
+# 예시
+feat(hero): 히어로 섹션 애니메이션 추가
+fix(form): 이메일 검증 로직 수정
+style(ui): 버튼 컴포넌트 스타일 개선
+refactor(translations): 번역 구조 리팩토링
+docs(readme): 설치 가이드 업데이트
+```
+
+### 11.3 타입
+```
+feat: 새 기능
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 포맷팅 (동작 변경 없음)
+refactor: 리팩토링
+test: 테스트 추가/수정
+chore: 빌드/설정 변경
+perf: 성능 개선
+```
+
+---
+
+## 12. 빌드 & 배포
+
+### 12.1 개발
+```bash
+npm install          # 의존성 설치
+npm run dev          # 개발 서버 (http://localhost:5173)
+```
+
+### 12.2 프로덕션
+```bash
+npm run build        # 빌드
+npm run preview      # 빌드 미리보기
+```
+
+### 12.3 환경별 설정
+```bash
+.env.development     # 개발 환경
+.env.production      # 프로덕션 환경
+```
+
+---
+
+## 13. 주요 명령어
+
+```bash
+# 개발
+npm run dev          # 개발 서버 시작
+
+# 빌드
+npm run build        # 프로덕션 빌드
+
+# 품질 관리
+npm audit            # 보안 취약점 검사
+npm outdated         # 업데이트 가능 패키지 확인
+
+# 의존성 관리
+npm install [package]         # 패키지 설치
+npm uninstall [package]       # 패키지 제거
+npm update                    # 패키지 업데이트
+```
+
+---
+
+## 14. 참고 문서
+
+- React: https://react.dev/
+- TypeScript: https://www.typescriptlang.org/
+- Vite: https://vite.dev/
+- Tailwind CSS: https://tailwindcss.com/
+- Radix UI: https://www.radix-ui.com/
+- Framer Motion: https://www.framer.com/motion/
+- React Hook Form: https://react-hook-form.com/
+
+---
+
+## 15. 문제 해결
+
+### 15.1 자주 발생하는 이슈
+
+**Vite 포트 충돌**
+```bash
+# 다른 포트 사용
+npx vite --port 3000
+```
+
+**Tailwind 클래스 적용 안됨**
+```bash
+# 설정 확인
+tailwind.config.js의 content 경로 확인
+postcss.config.mjs의 플러그인 확인
+```
+
+**타입 에러**
+```bash
+# TypeScript 재시작
+Ctrl+Shift+P → "TypeScript: Restart TS Server"
+```
+
+---
+
+## 요약
+
+이 프로젝트는 **React 18 + TypeScript + Vite + Tailwind CSS v3**를 기반으로 하는 다크 판타지 게임 사전예약 랜딩 페이지입니다. 
+
+**핵심 원칙**:
+1. ✅ 타입 안전성 (TypeScript)
+2. ✅ 컴포넌트 재사용성
+3. ✅ 성능 최적화
+4. ✅ 접근성 준수
+5. ✅ 일관된 코딩 스타일
+
+모든 코드는 이 규칙을 따라야 하며, 불확실한 경우 기존 코드를 참고하거나 팀과 상의하세요.
