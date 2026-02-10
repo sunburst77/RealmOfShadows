@@ -146,6 +146,11 @@ npm run dev
 # Supabase 설정
 VITE_SUPABASE_URL=your-project-url.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# A/B 테스트 로그 (선택사항)
+# 프로덕션 환경에서 A/B 테스트 로그를 출력하려면 'true'로 설정
+# 개발 환경에서는 기본적으로 로그가 출력됩니다
+VITE_ENABLE_AB_TEST_LOGS=false
 ```
 
 ### Supabase 설정
@@ -380,6 +385,11 @@ vercel
 # 3. 환경 변수 설정
 vercel env add VITE_SUPABASE_URL
 vercel env add VITE_SUPABASE_ANON_KEY
+
+# 4. A/B 테스트 로그 활성화 (선택사항)
+# 프로덕션에서 A/B 테스트 로그를 보려면:
+vercel env add VITE_ENABLE_AB_TEST_LOGS production
+# 값 입력: true
 ```
 
 ### Netlify 배포

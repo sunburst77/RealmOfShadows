@@ -52,6 +52,14 @@ function getOrCreateUserId(): string {
 }
 
 /**
+ * A/B 테스트 로그 출력 여부 확인
+ * 환경 변수 VITE_ENABLE_AB_TEST_LOGS가 'true'이거나 개발 환경이면 로그 출력
+ */
+const shouldLogABTest = (): boolean => {
+  return import.meta.env.VITE_ENABLE_AB_TEST_LOGS === 'true' || import.meta.env.DEV;
+};
+
+/**
  * A/B 테스트 그룹 할당
  * @param testName 테스트 이름
  * @param variantPercentage Variant 그룹 비율 (0-100, 기본값: 10)
@@ -67,8 +75,8 @@ export function getABTestGroup(
   );
   
   if (stored?.[testName]) {
-    // 기존 할당 로그 (개발 환경)
-    if (import.meta.env.DEV) {
+    // 기존 할당 로그 (환경 변수로 제어)
+    if (shouldLogABTest()) {
       console.log(`🧪 [A/B Test] "${testName}" 기존 그룹 확인:`, {
         group: stored[testName].group,
         assignedAt: stored[testName].assignedAt,
@@ -94,8 +102,8 @@ export function getABTestGroup(
   
   setLocalStorageItem(STORAGE_KEYS.AB_TEST_GROUP, assignments);
   
-  // A/B 테스트 할당 로그 (개발 환경)
-  if (import.meta.env.DEV) {
+  // A/B 테스트 할당 로그 (환경 변수로 제어)
+  if (shouldLogABTest()) {
     console.log(`🧪 [A/B Test] "${testName}" 그룹 할당:`, {
       group,
       variantPercentage: `${variantPercentage}%`,

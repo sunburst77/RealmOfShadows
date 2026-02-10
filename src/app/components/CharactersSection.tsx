@@ -14,8 +14,9 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
   const abTestGroup = getABTestGroup('character-card-hover-effect', 10);
   const isVariant = abTestGroup === 'variant';
   
-  // A/B 테스트 상태 로그 (개발 환경)
-  if (import.meta.env.DEV) {
+  // A/B 테스트 상태 로그 (환경 변수로 제어)
+  const shouldLog = import.meta.env.VITE_ENABLE_AB_TEST_LOGS === 'true' || import.meta.env.DEV;
+  if (shouldLog) {
     console.log(`🎨 [Character Cards] A/B Test 적용:`, {
       testName: 'character-card-hover-effect',
       group: abTestGroup,
