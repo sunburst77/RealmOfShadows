@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   USER_DATA: 'ros_user_data',
   LANGUAGE: 'ros_language',
   THEME: 'ros_theme',
+  AB_TEST_GROUP: 'ros_ab_test_group',
 } as const;
 
 type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

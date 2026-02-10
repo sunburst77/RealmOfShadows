@@ -3,12 +3,17 @@ import { Sword, Shield, Zap, Crown } from 'lucide-react';
 import { EpisodeCard } from './ui/EpisodeCard';
 import { toast } from 'sonner';
 import { Translations } from '../translations';
+import { getABTestGroup } from '../../lib/utils/ab-test';
 
 interface CharactersSectionProps {
   translations: Translations['characters'];
 }
 
 export function CharactersSection({ translations }: CharactersSectionProps) {
+  // A/B 테스트: 캐릭터 카드 hover 효과 (10% Variant)
+  const abTestGroup = getABTestGroup('character-card-hover-effect', 10);
+  const isVariant = abTestGroup === 'variant';
+  
   const icons = [
     <Sword className="w-8 h-8" key="sword" />,
     <Shield className="w-8 h-8" key="shield" />,
@@ -77,7 +82,7 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.02, y: -8 }}
+                whileHover={isVariant ? { scale: 1.05, y: -12 } : undefined}
                 onClick={() => states[index] !== 'locked' && handleEpisodeClick(episode, index)}
                 className={`relative rounded-xl overflow-hidden ${
                   states[index] === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -85,12 +90,22 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
               >
                 {/* Unified Card */}
                 <div 
-                  className={`relative bg-gradient-to-b from-[var(--color-accent-red)]/10 to-[var(--color-background-deep-black)] border-2 transition-all duration-[var(--transition-normal)] ${
+                  className={`relative bg-gradient-to-b from-[var(--color-accent-red)]/10 to-[var(--color-background-deep-black)] border-2 transition-all duration-300 ${
                     states[index] === 'unlocked-unread'
                       ? 'border-[var(--color-border-gold)] shadow-[var(--shadow-glow-gold)] hover:border-[var(--color-primary-gold)] hover:shadow-[var(--shadow-glow-gold-intense)]'
                       : states[index] === 'unlocked-read'
-                      ? 'border-[var(--color-border-default)] hover:border-[var(--color-border-gold)]'
+                      ? 'border-[var(--color-border-default)]'
                       : 'border-[#3a3a3a]'
+                  } ${
+                    // Control 그룹: unlocked 카드에 hover 시 노란색 테두리
+                    !isVariant && states[index] !== 'locked'
+                      ? 'group-hover:border-[var(--color-primary-gold)]'
+                      : ''
+                  } ${
+                    // Variant 그룹: unlocked 카드에 hover 시 그림자 효과
+                    isVariant && states[index] !== 'locked'
+                      ? 'group-hover:shadow-[var(--shadow-glow-gold-intense)]'
+                      : ''
                   }`}
                 >
                   {/* Background Image */}
