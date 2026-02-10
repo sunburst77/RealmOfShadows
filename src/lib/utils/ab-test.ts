@@ -67,6 +67,13 @@ export function getABTestGroup(
   );
   
   if (stored?.[testName]) {
+    // 기존 할당 로그 (개발 환경)
+    if (import.meta.env.DEV) {
+      console.log(`🧪 [A/B Test] "${testName}" 기존 그룹 확인:`, {
+        group: stored[testName].group,
+        assignedAt: stored[testName].assignedAt,
+      });
+    }
     return stored[testName].group;
   }
   
@@ -86,6 +93,17 @@ export function getABTestGroup(
   };
   
   setLocalStorageItem(STORAGE_KEYS.AB_TEST_GROUP, assignments);
+  
+  // A/B 테스트 할당 로그 (개발 환경)
+  if (import.meta.env.DEV) {
+    console.log(`🧪 [A/B Test] "${testName}" 그룹 할당:`, {
+      group,
+      variantPercentage: `${variantPercentage}%`,
+      hashPercentage: percentage,
+      userId,
+      assignedAt: assignments[testName].assignedAt,
+    });
+  }
   
   return group;
 }
