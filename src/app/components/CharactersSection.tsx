@@ -14,18 +14,15 @@ export function CharactersSection({ translations }: CharactersSectionProps) {
   const abTestGroup = getABTestGroup('character-card-hover-effect', 10);
   const isVariant = abTestGroup === 'variant';
   
-  // A/B 테스트 상태 로그 (환경 변수로 제어)
-  const shouldLog = import.meta.env.VITE_ENABLE_AB_TEST_LOGS === 'true' || import.meta.env.DEV;
-  if (shouldLog) {
-    console.log(`🎨 [Character Cards] A/B Test 적용:`, {
-      testName: 'character-card-hover-effect',
-      group: abTestGroup,
-      isVariant,
-      hoverEffect: isVariant 
-        ? 'Variant: 그림자 + 살짝 튀어나오는 효과' 
-        : 'Control: 노란색 테두리 효과',
-    });
-  }
+  // A/B 테스트 상태 로그 (항상 출력)
+  console.log(`🎨 [Character Cards] A/B Test 적용:`, {
+    testName: 'character-card-hover-effect',
+    group: abTestGroup,
+    isVariant,
+    hoverEffect: isVariant 
+      ? 'Variant: 그림자 + 살짝 튀어나오는 효과' 
+      : 'Control: 노란색 테두리 효과',
+  });
   
   const icons = [
     <Sword className="w-8 h-8" key="sword" />,
